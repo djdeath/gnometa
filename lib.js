@@ -1,6 +1,6 @@
 // try to use StringBuffer instead of string concatenation to improve performance
 
-function StringBuffer() {
+StringBuffer = function() {
   this.strings = []
   for (var idx = 0; idx < arguments.length; idx++)
     this.nextPutAll(arguments[idx])
@@ -74,7 +74,7 @@ Array.prototype.delimWith = function(d) {
 
 // Squeak's ReadStream, kind of
 
-function ReadStream(anArrayOrString) {
+ReadStream = function(anArrayOrString) {
   this.src = anArrayOrString
   this.pos = 0
 }
@@ -112,7 +112,7 @@ escapeChar = function(c) {
     return "\\u" + charCode.toString(16).pad("0", 4)
 }
 
-function unescape(s) {
+unescape = function(s) {
   if (s.charAt(0) == '\\')
     switch (s.charAt(1)) {
       case "'":  return "'"
@@ -142,7 +142,7 @@ String.prototype.toProgramString = function() {
 
 // C-style tempnam function
 
-function tempnam(s) { return (s ? s : "_tmpnam_") + tempnam.n++ }
+tempnam = function(s) { return (s ? s : "_tmpnam_") + tempnam.n++ }
 tempnam.n = 0
 
 // unique tags for objects (useful for making "hash tables")
