@@ -37,7 +37,8 @@ M.matchAll("123456789", "number")
 
 // the failure exception
 
-fail = { toString: function() { return "match failed" } }
+fail = new Error();
+fail.toString = function() { return "match failed" };
 
 // streams and memoization
 
