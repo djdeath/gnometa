@@ -174,8 +174,8 @@ ometa BSSemActionParser <: BSJSParser {
 ometa BSJSTranslator {
   trans      = [:t apply(t):ans]     -> ans,
   curlyTrans = [#begin curlyTrans:r] -> r
-             | [#begin trans*:rs]    -> ('{' + rs.join(';') + '}')
-             | trans:r               -> ('{' + r + '}'),
+             | [#begin trans*:rs]    -> ('{' + rs.join(';') + ';}')
+             | trans:r               -> ('{' + r + ';}'),
 
   this                                                  -> 'this',
   break                                                 -> 'break',
