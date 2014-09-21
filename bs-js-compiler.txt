@@ -109,16 +109,20 @@ ometa BSJSParser {
   funcRest     = "(" listOf(#formal, ','):fs ")" "{" srcElems:body "}"               -> [#func, fs, body],
   sc           = spacesNoNl ('\n' | &'}' | end)
                | ";",
-  binding      = "name":n ( "=" expr
+  varBinding   = "name":n ( "=" expr
                           | empty -> [#get, 'undefined'] ):v                         -> [#var, n, v],
+  letBinding   = "name":n ( "=" expr
+                          | empty -> [#get, 'undefined'] ):v                         -> [#let, n, v],
   block        = "{" srcElems:ss "}"                                                 -> ss,
   stmt         = block
-               | "var" listOf(#binding, ','):bs sc                                   -> [#begin].concat(bs)
+               | "var" listOf(#varBinding, ','):bs sc                                -> [#begin].concat(bs)
+               | "let" listOf(#letBinding, ','):bs sc                                -> [#begin].concat(bs)
                | "if" "(" expr:c ")" stmt:t ( "else" stmt
                                             | empty -> [#get, 'undefined'] ):f       -> [#if, c, t, f]
                | "while" "(" expr:c ")" stmt:s                                       -> [#while,   c, s]
                | "do" stmt:s "while" "(" expr:c ")" sc                               -> [#doWhile, s, c]
-               | "for" "(" ( "var" binding
+               | "for" "(" ( "var" varBinding
+                           | "let" letBinding
                            | expr
                            | empty -> [#get, 'undefined'] ):i
                        ";" ( expr
@@ -154,7 +158,7 @@ ometa BSJSParser {
 BSJSParser.hexDigits = "0123456789abcdef"
 BSJSParser.keywords  = { }
 keywords = ["break", "case", "catch", "continue", "default", "delete", "do", "else", "finally", "for", "function", "if", "in",
-            "instanceof", "new", "return", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "ometa"]
+            "instanceof", "new", "return", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "ometa", "let"]
 for (var idx = 0; idx < keywords.length; idx++)
   BSJSParser.keywords[keywords[idx]] = true
 BSJSParser._isKeyword = function(k) { return this.keywords.hasOwnProperty(k) }
@@ -212,6 +216,7 @@ ometa BSJSTranslator {
   send     :msg trans:recv trans*:args                  -> (recv + '.' + msg + '(' + args.join(',') + ')'),
   new      :cls trans*:args                             -> ('new ' + cls + '(' + args.join(',') + ')'),
   var      :name trans:val                              -> ('var ' + name + '=' + val),
+  let      :name trans:val                              -> ('let ' + name + '=' + val),
   throw    trans:x                                      -> ('throw ' + x),
   try      curlyTrans:x :name curlyTrans:c curlyTrans:f -> ('try ' + x + 'catch(' + name + ')' + c + 'finally' + f),
   json     trans*:props                                 -> ('({' + props.join(',') + '})'),
