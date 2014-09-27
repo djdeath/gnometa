@@ -52,6 +52,7 @@ ometaSource = '' + ometaSource;
 try {
   print(translateCode(ometaSource));
 } catch (e) {
+  log (e);
   if (e.errorPos !== undefined) {
     let pos = indexToPosition(ometaSource, e.errorPos);
     log('Parsing error at : line ' + pos.line + ' offset ' + pos.offset + '\n\n');
