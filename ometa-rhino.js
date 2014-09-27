@@ -1,9 +1,17 @@
 const Gio = imports.gi.Gio;
 
+let loadFile = function(path) {
+  let file = Gio.File.new_for_path(path);
+  let [, source] = file.load_contents(null);
+  return '' + source;
+};
+
+let printFile = function(path) {
+  print(loadFile(path));
+};
+
 let load = function(filename) {
-  let file = Gio.File.new_for_path(filename);
-  let [, jsSource] = file.load_contents(null);
-  eval('(function() { ' + jsSource + ' }).apply(window);');
+  eval('(function() { ' + loadFile(filename) + ' }).apply(window);');
 };
 
 load("lib.js");
@@ -44,9 +52,7 @@ let ometa = function(s) {
 };
 
 
-let file = Gio.File.new_for_path(ARGV[0]);
-let [, ometaSource] = file.load_contents(null);
-ometaSource = '' + ometaSource;
+let ometaSource = loadFile(ARGV[0]);
 
 try {
   print(translateCode(ometaSource));
