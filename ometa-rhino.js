@@ -21,7 +21,7 @@ load("bs-ometa-compiler.js");
 load("bs-ometa-optimizer.js");
 load("bs-ometa-js-compiler.js");
 
-let alert = print;
+let alert = log;
 
 let indexToPosition = function(source, idx) {
   linePos = 0;
