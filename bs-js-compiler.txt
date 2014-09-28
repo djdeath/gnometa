@@ -111,7 +111,7 @@ ometa BSJSParser {
                | ";",
   varBinding   = "name":n ( "=" expr
                           | empty -> [#get, 'undefined'] ):v                         -> [#var, n, v],
-  block        = "{" srcElems:ss "}"                                                 -> ss,
+  block        = "{" srcElems:ss "}"                                                 -> [#begin, ss],
   stmt         = block
                | ("var" | "let" | "const"):decl listOf(#varBinding, ','):bs sc       -> [#beginVar, decl].concat(bs)
                | "if" "(" expr:c ")" stmt:t ( "else" stmt
@@ -131,8 +131,8 @@ ometa BSJSParser {
                       "in" expr:e
                        ")" stmt:s                                                    -> [#forIn, v, e, s]
                | "switch" "(" expr:e ")" "{"
-                   ( "case" expr:c ":" srcElems:cs -> [#case, c, cs]
-                   | "default"     ":" srcElems:cs -> [#default, cs] )*:cs
+                   ( "case" expr:c ":" srcElems:cs -> [#case, c, [#begin, cs]]
+                   | "default"     ":" srcElems:cs -> [#default, [#begin, cs]] )*:cs
                  "}"                                                                 -> [#switch, e].concat(cs)
                | "break" sc                                                          -> [#break]
                | "continue" sc                                                       -> [#continue]
@@ -147,7 +147,7 @@ ometa BSJSParser {
                | ";"                                                                 -> [#get, "undefined"],
   srcElem      = "function" "name":n funcRest:f                                      -> [#var, n, f]
                | stmt,
-  srcElems     = srcElem*:ss                                                         -> [#begin].concat(ss),
+  srcElems     = srcElem*:ss                                                         -> [#beginTop].concat(ss),
 
   topLevel     = srcElems:r spaces end                                               -> r
 }
@@ -201,10 +201,15 @@ ometa BSJSTranslator {
   for      trans:init trans:cond trans:upd
            curlyTrans:body                              -> ('for(' + init + ';' + cond + ';' + upd + ')' + body),
   forIn    trans:x trans:arr curlyTrans:body            -> ('for(' + x + ' in ' + arr + ')' + body),
+  beginTop (trans:x
+              ( (?(x[x.length - 1] == '}') | end) -> x
+              | empty                             -> (x + ';')
+              )
+           )*:xs                                        -> (xs.join('') + ';'),
   begin    trans:x end                                  -> x,
   begin    (trans:x
               ( (?(x[x.length - 1] == '}') | end) -> x
-              | empty                             -> (x  + ';')
+              | empty                             -> (x + ';')
               )
            )*:xs                                        -> ('{' + xs.join('') + '}'),
   beginVar :decl trans:x end                            -> (decl + ' ' + x),
