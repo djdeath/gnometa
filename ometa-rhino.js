@@ -11,10 +11,11 @@ let printFile = function(path) {
 };
 
 let load = function(filename) {
-  eval('(function() { ' + loadFile(filename) + ' }).apply(window);');
+  eval(loadFile(filename));
+  //eval('(function() { ' + loadFile(filename) + ' }).apply(this);');
 };
 
-load("lib.js");
+eval(loadFile("lib.js"));
 load("ometa-base.js");
 load("bs-js-compiler.js");
 load("bs-ometa-compiler.js");
