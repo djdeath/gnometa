@@ -55,7 +55,7 @@ ometa BSOMetaParser {
   expr2          = "~" expr2:x                                         -> [#Not,       x]
                  | "&" expr1:x                                         -> [#Lookahead, x]
                  | expr1,
-  expr1          = application 
+  expr1          = application
                  | ( keyword('undefined') | keyword('nil')
                    | keyword('true')      | keyword('false') ):x       -> [#App, #exactly, x]
                  | spaces (characters | sCharacters | string | number)
@@ -105,7 +105,7 @@ ometa BSOMetaTranslator {
   JumpTable  jtCase*:cases                 -> this.jumpTableCode(cases),
   Interleave intPart*:xs                   -> ['this._interleave(', xs.join(','), ')']                             .join(''),
 
-  
+
   Rule       :name {this.rName = name}
              locals:ls trans:body          -> ['\n"', name, '":function(){', ls, 'return ', body, ';}']            .join(''),
   Grammar    :name :sName
@@ -120,11 +120,10 @@ ometa BSOMetaTranslator {
   transFn  = trans:x                       -> ['(function(){return ', x, ';})']                                    .join('')
 }
 BSOMetaTranslator.jumpTableCode = function(cases) {
-  var buf = new StringBuffer()
-  buf.nextPutAll("(function(){switch(this._apply('anything')){")
+  var buf = new StringBuffer();
+  buf.nextPutAll("(function(){switch(this._apply('anything')){");
   for (var i = 0; i < cases.length; i += 1)
-    buf.nextPutAll("case " + cases[i][0] + ":return " + cases[i][1] + ";")
-  buf.nextPutAll("default: throw fail}}).call(this)")
-  return buf.contents()
-}
-
+    buf.nextPutAll("case " + cases[i][0] + ":return " + cases[i][1] + ";");
+  buf.nextPutAll("default: throw fail}}).call(this)");
+  return buf.contents();
+};
