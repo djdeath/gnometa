@@ -205,7 +205,7 @@ ometa BSJSTranslator {
               ( (?(x[x.length - 1] == '}') | end) -> x
               | empty                             -> (x + ';')
               )
-           )*:xs                                        -> (xs.join('') + ';'),
+           )*:xs                                        -> xs.join(''),
   begin    trans:x end                                  -> x,
   begin    (trans:x
               ( (?(x[x.length - 1] == '}') | end) -> x
