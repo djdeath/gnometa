@@ -34,7 +34,7 @@ let indexToPosition = function(source, idx) {
     }
   }
   return { line: lineNum + 1,
-           offset: idx - linePos + 1 };
+           offset: idx - linePos };
 };
 
 let translateCode = function(s) {
