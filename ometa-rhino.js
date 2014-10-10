@@ -15,12 +15,12 @@ let load = function(filename) {
   //eval('(function() { ' + loadFile(filename) + ' }).apply(this);');
 };
 
-eval(loadFile("lib.js"));
-load("ometa-base.js");
-load("bs-js-compiler.js");
-load("bs-ometa-compiler.js");
-load("bs-ometa-optimizer.js");
-load("bs-ometa-js-compiler.js");
+//eval(loadFile("lib.js"));
+eval(loadFile("ometa-base.js"));
+eval(loadFile("bs-js-compiler.js"));
+eval(loadFile("bs-ometa-compiler.js"));
+eval(loadFile("bs-ometa-optimizer.js"));
+eval(loadFile("bs-ometa-js-compiler.js"));
 
 let alert = log;
 
