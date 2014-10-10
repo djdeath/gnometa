@@ -151,13 +151,13 @@ ometa BSJSParser {
 
   topLevel     = srcElems:r spaces end                                               -> r
 }
-BSJSParser.hexDigits = "0123456789abcdef"
-BSJSParser.keywords  = { }
+BSJSParser.hexDigits = "0123456789abcdef";
+BSJSParser.keywords  = { };
 keywords = ["break", "case", "catch", "continue", "default", "delete", "do", "else", "finally", "for", "function", "if", "in",
-            "instanceof", "new", "return", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "ometa", "let", "const"]
+            "instanceof", "new", "return", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "ometa", "let", "const"];
 for (var idx = 0; idx < keywords.length; idx++)
-  BSJSParser.keywords[keywords[idx]] = true
-BSJSParser._isKeyword = function(k) { return this.keywords.hasOwnProperty(k) }
+  BSJSParser.keywords[keywords[idx]] = true;
+BSJSParser._isKeyword = function(k) { return this.keywords.hasOwnProperty(k); };
 
 
 ometa BSSemActionParser <: BSJSParser {
