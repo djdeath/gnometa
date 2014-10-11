@@ -1,4 +1,4 @@
-ometa BSJSParser {
+let BSJSParser = ometa {
   space        = ^space | fromTo('//', '\n') | fromTo('/*', '*/'),
   nameFirst    = letter | '$' | '_',
   nameRest     = nameFirst | digit,
@@ -150,7 +150,7 @@ ometa BSJSParser {
   srcElems     = srcElem*:ss                                                         -> [#beginTop].concat(ss),
 
   topLevel     = srcElems:r spaces end                                               -> r
-}
+};
 BSJSParser.hexDigits = "0123456789abcdef";
 BSJSParser.keywords  = { };
 keywords = ["break", "case", "catch", "continue", "default", "delete", "do", "else", "finally", "for", "function", "if", "in",
@@ -160,7 +160,7 @@ for (var idx = 0; idx < keywords.length; idx++)
 BSJSParser._isKeyword = function(k) { return this.keywords.hasOwnProperty(k); };
 
 
-ometa BSSemActionParser <: BSJSParser {
+let BSSemActionParser = ometa(BSJSParser) {
   curlySemAction = "{" expr:r sc "}" spaces                                  -> r
                  | "{" (srcElem:s &srcElem -> s)*:ss
                        ( expr:r sc -> [#return, r] | srcElem):s {ss.push(s)}
@@ -169,9 +169,9 @@ ometa BSSemActionParser <: BSJSParser {
                                                                                         [#this]],
   semAction      = curlySemAction
                  | primExpr:r spaces                                         -> r
-}
+};
 
-ometa BSJSTranslator {
+let BSJSTranslator = ometa {
   trans      = [:t apply(t):ans]     -> ans,
   curlyTrans = [#begin curlyTrans:r] -> r
              | [#begin trans*:rs]    -> ('{' + rs.join(';') + ';}')
@@ -226,4 +226,4 @@ ometa BSJSTranslator {
   switch   trans:x trans*:cases                         -> ('switch(' + x + '){' + cases.join(';') + '}'),
   case     trans:x trans:y                              -> ('case ' + x + ': '+ y),
   default          trans:y                              -> ('default: ' + y)
-}
+};

@@ -1,9 +1,8 @@
-ometa BSOMetaJSParser <: BSJSParser {
-  srcElem = spaces BSOMetaParser.grammar:r sc -> r
-          | ^srcElem
-}
+let BSOMetaJSParser = ometa(BSJSParser) {
+  primExprHd = BSOMetaParser.grammar:r -> r
+             | ^primExprHd
+};
 
-ometa BSOMetaJSTranslator <: BSJSTranslator {
+let BSOMetaJSTranslator = ometa(BSJSTranslator) {
   Grammar = BSOMetaTranslator.Grammar
-}
-
+};
