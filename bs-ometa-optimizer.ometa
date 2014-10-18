@@ -25,7 +25,7 @@ let BSNullOptimization = ometa {
   JumpTable  ([:c trans:e] -> [c, e])*:ces -> ['JumpTable'].concat(ces),
   Interleave ([:m trans:p] -> [m, p])*:xs  -> ['Interleave'].concat(xs),
   Rule       :name :ls trans:body          -> ['Rule', name, ls, body]
-}
+};
 BSNullOptimization.initialize = function() { this._didSomething = false; };
 
 let BSAssociativeOptimization = ometa(BSNullOptimization) {
@@ -39,7 +39,7 @@ let BSAssociativeOptimization = ometa(BSNullOptimization) {
   transInside :t = [exactly(t) transInside(t):xs] transInside(t):ys setHelped -> xs.concat(ys)
                  | trans:x                        transInside(t):xs           -> [x].concat(xs)
                  |                                                            -> []
-}
+};
 
 let BSSeqInliner = ometa(BSNullOptimization) {
   App        = 'seq' :s end seqString(s):cs setHelped -> ['And'].concat(cs).concat([['Act', s]])
@@ -49,7 +49,7 @@ let BSSeqInliner = ometa(BSNullOptimization) {
                  ( ['"'  inlineChar*:cs '"' ]         -> cs
                  | ['\'' inlineChar*:cs '\'']         -> cs
                  )
-}
+};
 
 JumpTable = function(choiceOp, choice) {
   this.choiceOp = choiceOp;
