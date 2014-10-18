@@ -11,14 +11,14 @@
 */
 
 /*
-ometa M {
+var M = ometa {
   number = number:n digit:d -> { n * 10 + d.digitValue() }
          | digit:d          -> { d.digitValue() }
-}
+};
 
 translates to...
 
-M = objectThatDelegatesTo(OMeta, {
+var M = objectThatDelegatesTo(OMeta, {
   number: function() {
             return this._or(function() {
                               var n = this._apply("number"),
@@ -31,20 +31,20 @@ M = objectThatDelegatesTo(OMeta, {
                             }
                            )
           }
-})
-M.matchAll("123456789", "number")
+});
+M.matchAll("123456789", "number");
 */
 
 // try to use StringBuffer instead of string concatenation to improve performance
 
 let StringBuffer = function() {
-  this.strings = []
+  this.strings = [];
   for (var idx = 0; idx < arguments.length; idx++)
-    this.nextPutAll(arguments[idx])
+    this.nextPutAll(arguments[idx]);
 };
-StringBuffer.prototype.nextPutAll = function(s) { this.strings.push(s) };
-StringBuffer.prototype.contents   = function()  { return this.strings.join("") };
-String.prototype.writeStream      = function() { return new StringBuffer(this) };
+StringBuffer.prototype.nextPutAll = function(s) { this.strings.push(s); };
+StringBuffer.prototype.contents   = function()  { return this.strings.join(""); };
+String.prototype.writeStream      = function() { return new StringBuffer(this); };
 
 // make Arrays print themselves sensibly
 
@@ -61,7 +61,7 @@ let printOn = function(x, ws) {
     ws.nextPutAll("]");
   } else
     ws.nextPutAll(x.toString());
-}
+};
 
 Array.prototype.toString = function() {
   var ws = "".writeStream();
@@ -214,7 +214,7 @@ let getTag = (function() {
 
 // the failure exception
 
-fail = new Error();
+let fail = new Error();
 fail.toString = function() { return "match failed"; };
 
 // streams and memoization
