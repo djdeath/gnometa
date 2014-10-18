@@ -120,15 +120,6 @@ Array.prototype.delimWith = function(d) {
     []);
 };
 
-// Squeak's ReadStream, kind of
-
-let ReadStream = function(anArrayOrString) {
-  this.src = anArrayOrString;
-  this.pos = 0;
-};
-ReadStream.prototype.atEnd = function() { return this.pos >= this.src.length; };
-ReadStream.prototype.next  = function() { return this.src.at(this.pos++); };
-
 // escape characters
 
 String.prototype.pad = function(s, len) {
