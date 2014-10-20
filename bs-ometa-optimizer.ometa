@@ -84,7 +84,7 @@ let BSJumpTableOptimization = ometa(BSNullOptimization) {
 };
 
 let BSOMetaOptimizer = ometa {
-  optimizeGrammar = ['Grammar' :n :sn optimizeRule*:rs]          -> ['Grammar', n, sn].concat(rs),
+  optimizeGrammar = ['Grammar' :sn optimizeRule*:rs]          -> ['Grammar', sn].concat(rs),
   optimizeRule    = :r (BSSeqInliner.optimize(r):r | empty)
                        ( BSAssociativeOptimization.optimize(r):r
                        | BSJumpTableOptimization.optimize(r):r
