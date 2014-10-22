@@ -15,7 +15,7 @@ OO = $(O$(V))
 OMETA = $(OO) echo " GEN " $@;
 
 %.js.new: %.ometa
-	$(OMETA) GJS_DISABLE_EXTRA_WARNINGS=1 gjs ometa-rhino.js $< > $@
+	$(OMETA) ./gnometa $< > $@
 
 %.js: %.js.new
 	$(OO) mv $< $@
