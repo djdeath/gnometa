@@ -1,4 +1,17 @@
 const Gio = imports.gi.Gio;
+const Options = imports.options;
+
+const CmdOptions = [
+  {
+    name: 'ast',
+    shortName: 'a',
+    requireArgument: false,
+    defaultValue: false,
+  },
+];
+
+let config = Options.parseArguments(CmdOptions, ARGV);
+
 
 let loadFile = function(path) {
   let file = Gio.File.new_for_path(path);
@@ -45,7 +58,10 @@ let translateCode = function(s) {
   tree = BSOMetaJSParser.matchAll(s, "topLevel", undefined, function(m, i) {
     throw objectThatDelegatesTo(fail, {errorPos: i});
   });
-  return BSOMetaJSTranslator.match(tree, "trans", undefined, translationError)
+  if (config.options.ast)
+    return JSON.stringify(tree, null, 2);
+  else
+    return BSOMetaJSTranslator.match(tree, "trans", undefined, translationError)
 };
 
 let ometa = function(s) {
@@ -53,7 +69,7 @@ let ometa = function(s) {
 };
 
 
-let ometaSource = loadFile(ARGV[0]);
+let ometaSource = loadFile(config.arguments[0]);
 
 try {
   print(translateCode(ometaSource));
