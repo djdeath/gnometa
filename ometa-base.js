@@ -22,14 +22,14 @@ var M = objectThatDelegatesTo(OMeta, {
   number: function() {
             return this._or(function() {
                               var n = this._apply("number"),
-                                  d = this._apply("digit")
-                              return n * 10 + d.digitValue()
+                                  d = this._apply("digit");
+                              return n * 10 + d.digitValue();
                             },
                             function() {
-                              var d = this._apply("digit")
-                              return d.digitValue()
+                              var d = this._apply("digit");
+                              return d.digitValue();
                             }
-                           )
+                           );
           }
 });
 M.matchAll("123456789", "number");
@@ -304,16 +304,14 @@ let OMeta = {
               throw fail;
             memoRec.ans       = ans;
             memoRec.nextInput = this.input;
-          }
-          catch (f) {
+          } catch (f) {
             if (f != fail)
               throw f;
             break;
           }
         }
       }
-    }
-    else if (memoRec instanceof Failer) {
+    } else if (memoRec instanceof Failer) {
       memoRec.used = true;
       throw fail;
     }
@@ -328,8 +326,8 @@ let OMeta = {
     for (var idx = arguments.length - 1; idx >= ruleFnArity + 1; idx--) // prepend "extra" arguments in reverse order
       this._prependInput(arguments[idx]);
     return ruleFnArity == 0 ?
-             ruleFn.call(this) :
-             ruleFn.apply(this, Array.prototype.slice.call(arguments, 1, ruleFnArity + 1));
+      ruleFn.call(this) :
+      ruleFn.apply(this, Array.prototype.slice.call(arguments, 1, ruleFnArity + 1));
   },
   _superApplyWithArgs: function(recv, rule) {
     var ruleFn = this[rule];
@@ -337,8 +335,8 @@ let OMeta = {
     for (var idx = arguments.length - 1; idx >= ruleFnArity + 2; idx--) // prepend "extra" arguments in reverse order
       recv._prependInput(arguments[idx]);
     return ruleFnArity == 0 ?
-             ruleFn.call(recv) :
-             ruleFn.apply(recv, Array.prototype.slice.call(arguments, 2, ruleFnArity + 2));
+      ruleFn.call(recv) :
+      ruleFn.apply(recv, Array.prototype.slice.call(arguments, 2, ruleFnArity + 2));
   },
   _prependInput: function(v) {
     this.input = new OMInputStream(v, this.input);
@@ -357,15 +355,15 @@ let OMeta = {
       } else
         newInput = new OMInputStream(v, this.input);
       this.input = newInput;
-    }
+    };
     this._applyWithArgs = function(rule) {
       var ruleFnArity = this[rule].length;
       for (var idx = arguments.length - 1; idx >= ruleFnArity + 1; idx--) // prepend "extra" arguments in reverse order
         this._prependInput(arguments[idx]);
       return ruleFnArity == 0 ?
-               this._apply(rule) :
-               this[rule].apply(this, Array.prototype.slice.call(arguments, 1, ruleFnArity + 1));
-    }
+        this._apply(rule) :
+        this[rule].apply(this, Array.prototype.slice.call(arguments, 1, ruleFnArity + 1));
+    };
   },
 
   _pred: function(b) {
@@ -376,7 +374,7 @@ let OMeta = {
   _not: function(x) {
     var origInput = this.input;
     try {
-      x.call(this)
+      x.call(this);
     } catch (f) {
       if (f != fail)
         throw f;
@@ -393,7 +391,7 @@ let OMeta = {
   },
   _or: function() {
     var origInput = this.input;
-    for (var idx = 0; idx < arguments.length; idx++)
+    for (var idx = 0; idx < arguments.length; idx++) {
       try {
         this.input = origInput;
         return arguments[idx].call(this);
@@ -401,6 +399,7 @@ let OMeta = {
         if (f != fail)
           throw f;
       }
+    }
     throw fail;
   },
   _xor: function(ruleName) {
