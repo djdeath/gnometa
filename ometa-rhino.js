@@ -31,8 +31,8 @@ let load = function(filename) {
 //eval(loadFile("lib.js"));
 eval(loadFile("ometa-base.js"));
 eval(loadFile("bs-js-compiler.js"));
-eval(loadFile("bs-ometa-compiler.js"));
 eval(loadFile("bs-ometa-optimizer.js"));
+eval(loadFile("bs-ometa-compiler.js"));
 eval(loadFile("bs-ometa-js-compiler.js"));
 
 let alert = log;
