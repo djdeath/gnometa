@@ -110,15 +110,15 @@ let BSJSParser = ometa {
   sc           = spacesNoNl ('\n' | &'}' | end)
                | ";",
   varBinding   = "name":n ( "=" expr
-                          | empty -> [#get, 'undefined'] ):v                         -> [#var, n, v],
+                          | empty -> [#get, 'undefined'] ):v                         -> [#assignVar, n, v],
   block        = "{" srcElems:ss "}"                                                 -> [#begin, ss],
   stmt         = block
-               | ("var" | "let" | "const"):decl listOf(#varBinding, ','):bs sc       -> [#beginVar, decl].concat(bs)
+               | ("var" | "let" | "const"):decl listOf(#varBinding, ','):bs sc       -> [#beginVars, decl].concat(bs)
                | "if" "(" expr:c ")" stmt:t ( "else" stmt
                                             | empty -> [#get, 'undefined'] ):f       -> [#if, c, t, f]
                | "while" "(" expr:c ")" stmt:s                                       -> [#while,   c, s]
                | "do" stmt:s "while" "(" expr:c ")" sc                               -> [#doWhile, s, c]
-               | "for" "(" ( ("var" | "let" | "const"):decl listOf(#varBinding, ','):bs -> [#beginVar, decl].concat(bs)
+               | "for" "(" ( ("var" | "let" | "const"):decl listOf(#varBinding, ','):bs -> [#beginVars, decl].concat(bs)
                            | expr
                            | empty -> [#get, 'undefined'] ):i
                        ";" ( expr
@@ -126,7 +126,7 @@ let BSJSParser = ometa {
                        ";" ( expr
                            | empty -> [#get, 'undefined'] ):u
                        ")" stmt:s                                                    -> [#for, i, c, u, s]
-               | "for" "(" ( "var" "name":n -> [#var, n, [#get, 'undefined']]
+               | "for" "(" ( ("var" | "let" | "const"):decl "name":n -> [#beginVars, decl, [#noAssignVar, n]]
                            | expr                                             ):v
                       "in" expr:e
                        ")" stmt:s                                                    -> [#forIn, v, e, s]
@@ -145,7 +145,7 @@ let BSJSParser = ometa {
                | "with" "(" expr:x ")" stmt:s                                        -> [#with, x, s]
                | expr:e sc                                                           -> e
                | ";"                                                                 -> [#get, "undefined"],
-  srcElem      = "function" "name":n funcRest:f                                      -> [#var, n, f]
+  srcElem      = "function" "name":n funcRest:f                                      -> [#assignVar, n, f]
                | stmt,
   srcElems     = srcElem*:ss                                                         -> [#beginTop].concat(ss),
 
@@ -212,13 +212,14 @@ let BSJSTranslator = ometa {
               | empty                             -> (x + ';')
               )
            )*:xs                                        -> ('{' + xs.join('') + '}'),
-  beginVar :decl trans:x end                            -> (decl + ' ' + x),
-  beginVar :decl (trans:x)*:xs                          -> (decl + ' ' + xs.join(',')),
+  beginVars :decl trans:x end                           -> (decl + ' ' + x),
+  beginVars :decl (trans:x)*:xs                         -> (decl + ' ' + xs.join(',')),
   func     :args curlyTrans:body                        -> ('(function (' + args.join(',') + ')' + body + ')'),
   call     trans:fn trans*:args                         -> (fn + '(' + args.join(',') + ')'),
   send     :msg trans:recv trans*:args                  -> (recv + '.' + msg + '(' + args.join(',') + ')'),
   new      :cls trans*:args                             -> ('new ' + cls + '(' + args.join(',') + ')'),
-  var      :name trans:val                              -> (name + '=' + val),
+  assignVar :name trans:val                             -> (name + '=' + val),
+  noAssignVar :name                                     -> name,
   throw    trans:x                                      -> ('throw ' + x),
   try      curlyTrans:x :name curlyTrans:c curlyTrans:f -> ('try ' + x + 'catch(' + name + ')' + c + 'finally' + f),
   json     trans*:props                                 -> ('({' + props.join(',') + '})'),
