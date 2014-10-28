@@ -90,8 +90,7 @@ let BSOMetaTranslator = ometa {
   Or         transFn*:xs                   -> ['this._or(',  xs.join(','), ')']                                    .join(''),
   XOr        transFn*:xs                       {xs.unshift(this.rName.toProgramString())}
                                            -> ['this._xor(', xs.join(','), ')']                                    .join(''),
-  And        notLast(#trans)*:xs trans:y
-             {xs.push('return ' + y)}      -> ['(function(){', xs.join(';'), ';}).call(this)']                     .join(''),
+  And        transFn*:xs                   -> xs.join(';'),
   And                                      -> 'undefined',
   Opt        transFn:x                     -> ['this._opt(',           x, ')']                                     .join(''),
   Many       transFn:x                     -> ['this._many(',          x, ')']                                     .join(''),
@@ -105,9 +104,12 @@ let BSOMetaTranslator = ometa {
   JumpTable  jtCase*:cases                 -> this.jumpTableCode(cases),
   Interleave intPart*:xs                   -> ['this._interleave(', xs.join(','), ')']                             .join(''),
 
+  Function   transFn*:xs                   -> ['function(){', xs.join(';'), ';}']                                  .join(''),
+  Return     transFn:x                     -> ['return ', x]                                                       .join(''),
+  Parenthesis transFn:x                    -> ['(', x, ')']                                                        .join(''),
 
-  Rule       :name {this.rName = name}
-             locals:ls trans:body          -> ['\n"', name, '":function(){', ls, 'return ', body, ';}']            .join(''),
+  Rule       :name {this.rName = name; }
+             locals:ls trans:body          -> ['\n"', name, '":function(){', ls, body, ';}']            .join(''),
   Grammar    :sName
              {this.sName = sName}
              trans*:rules                  -> ['objectThatDelegatesTo(', sName, ',{', rules.join(','), '})'].join(''),
@@ -116,13 +118,13 @@ let BSOMetaTranslator = ometa {
   locals   = [string+:vs]                  -> ['var ', vs.join(','), ';']                                          .join('')
            | []                            -> '',
   trans    = [:t apply(t):ans]             -> ans,
-  transFn  = trans:x                       -> ['(function(){return ', x, ';})']                                    .join('')
+  transFn  = trans:x                       -> x
 }
 BSOMetaTranslator.jumpTableCode = function(cases) {
   var buf = new StringBuffer();
   buf.nextPutAll("(function(){switch(this._apply('anything')){");
   for (var i = 0; i < cases.length; i += 1)
-    buf.nextPutAll("case " + cases[i][0] + ":return " + cases[i][1] + ";");
+    buf.nextPutAll("case " + cases[i][0] + ":" + cases[i][1] + ";");
   buf.nextPutAll("default: throw fail}}).call(this)");
   return buf.contents();
 };

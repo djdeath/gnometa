@@ -24,6 +24,7 @@ let BSNullOptimization = ometa {
   IdxConsBy  trans:x                       -> ['IdxConsBy', x],
   JumpTable  ([:c trans:e] -> [c, e])*:ces -> ['JumpTable'].concat(ces),
   Interleave ([:m trans:p] -> [m, p])*:xs  -> ['Interleave'].concat(xs),
+
   Rule       :name :ls trans:body          -> ['Rule', name, ls, body]
 };
 BSNullOptimization.initialize = function() { this._didSomething = false; };
@@ -51,7 +52,7 @@ let BSSeqInliner = ometa(BSNullOptimization) {
                  )
 };
 
-JumpTable = function(choiceOp, choice) {
+let JumpTable = function(choiceOp, choice) {
   this.choiceOp = choiceOp;
   this.choices = {};
   this.add(choice);
@@ -83,10 +84,50 @@ let BSJumpTableOptimization = ometa(BSNullOptimization) {
   jtChoices :op = jtChoice:c {new JumpTable(op, c)}:jt (jtChoice:c {jt.add(c)})* setHelped -> jt.toTree()
 };
 
+let BSFunctionOptimization = ometa {
+  optimize  = trans:x -> x,
+
+  trans = [:t ?(this[t] != undefined) apply(t):ans] -> ans,
+
+  somethingThatReturns = [ exactly(#And) apply(#AndReturn):ans ] -> ans
+                       | [ exactly(#Set) apply(#Set):ans ] -> ['Return', ['Parenthesis', ans]]
+                       | trans:x -> ['Return', x],
+
+  functioned = somethingThatReturns:x -> ['Function', x],
+
+
+  AndReturn  notLast(#trans)*:xs somethingThatReturns:y   -> ['And'].concat(xs.concat([y])),
+  And                                                     -> ['And'], // Special case...
+
+  Or         functioned*:xs                               -> ['Or'].concat(xs),
+  XOr        functioned*:xs                               -> ['XOr'].concat(xs),
+  Opt        functioned:x                                 -> ['Opt',  x],
+  Many       functioned:x                                 -> ['Many',  x],
+  Many1      functioned:x                                 -> ['Many1', x],
+  Not        functioned:x                                 -> ['Not',       x],
+  Lookahead  functioned:x                                 -> ['Lookahead', x],
+  Form       functioned:x                                 -> ['Form',      x],
+  ConsBy     functioned:x                                 -> ['ConsBy',    x],
+  IdxConsBy  functioned:x                                 -> ['IdxConsBy', x],
+  App        :rule anything*:args                         -> ['App', rule].concat(args),
+  Act        :expr                                        -> ['Act', expr],
+  Pred       :expr                                        -> ['Pred', expr],
+  Set        :n trans:v                                   -> ['Set', n, v],
+  JumpTable  ([:c somethingThatReturns:e] -> [c, e])*:ces -> ['JumpTable'].concat(ces),
+  Interleave ([:m functioned:p] -> [m, p])*:xs            -> ['Interleave'].concat(xs),
+
+
+  Rule       :name anything:ls somethingThatReturns:body -> ['Rule', name, ls, body]
+};
+
 let BSOMetaOptimizer = ometa {
   optimizeGrammar = ['Grammar' :sn optimizeRule*:rs]          -> ['Grammar', sn].concat(rs),
-  optimizeRule    = :r (BSSeqInliner.optimize(r):r | empty)
+  optimizeRule    = :r ( BSSeqInliner.optimize(r):r
+                       | empty )
+
                        ( BSAssociativeOptimization.optimize(r):r
-                       | BSJumpTableOptimization.optimize(r):r
-                       )*                                        -> r
+                       | BSJumpTableOptimization.optimize(r):r )*
+
+                       BSFunctionOptimization.optimize(r):r
+    -> r
 };
