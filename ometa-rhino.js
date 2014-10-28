@@ -79,14 +79,15 @@ let start = function() {
   eval(loadFile("bs-ometa-compiler.js"));
   eval(loadFile("bs-ometa-js-compiler.js"));
 
-  let ometaSource = loadFile(config.arguments[0]);
-
   try {
     if (config.options.base)
       print(loadFile('./ometa-base.js'));
-    print(translateCode(ometaSource,
-                        BSOMetaJSParser,
-                        config.options.ast ? null : BSOMetaJSTranslator));
+    for (let i = 0; i < config.arguments.length; i++) {
+      let ometaSource = loadFile(config.arguments[i]);
+      print(translateCode(ometaSource,
+                          BSOMetaJSParser,
+                          config.options.ast ? null : BSOMetaJSTranslator));
+    }
   } catch (e) {
     if (e.errorPos !== undefined) {
       let pos = indexToPosition(ometaSource, e.errorPos);
