@@ -1,3 +1,4 @@
+const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
 const Options = imports.options;
 
@@ -7,11 +8,23 @@ const CmdOptions = [
     shortName: 'a',
     requireArgument: false,
     defaultValue: false,
+    help: 'Output the AST representation of the program',
+  },
+  {
+    name: 'base',
+    shortName: 'b',
+    requireArgument: false,
+    defaultValue: false,
+    help: 'Include the base compiler library (useful for standalone programs)',
+  },
+  {
+    name: 'help',
+    shortName: 'h',
+    requireArgument: false,
+    defaultValue: false,
+    help: 'Print this screen',
   },
 ];
-
-let config = Options.parseArguments(CmdOptions, ARGV);
-
 
 let loadFile = function(path) {
   let file = Gio.File.new_for_path(path);
@@ -22,18 +35,6 @@ let loadFile = function(path) {
 let printFile = function(path) {
   print(loadFile(path));
 };
-
-let load = function(filename) {
-  eval(loadFile(filename));
-  //eval('(function() { ' + loadFile(filename) + ' }).apply(this);');
-};
-
-//eval(loadFile("lib.js"));
-eval(loadFile("ometa-base.js"));
-eval(loadFile("bs-js-compiler.js"));
-eval(loadFile("bs-ometa-optimizer.js"));
-eval(loadFile("bs-ometa-compiler.js"));
-eval(loadFile("bs-ometa-js-compiler.js"));
 
 let alert = log;
 
@@ -50,33 +51,49 @@ let indexToPosition = function(source, idx) {
            offset: idx - linePos };
 };
 
-let translateCode = function(s) {
+let translateCode = function(s, parser, translator) {
   var translationError = function(m, i) {
       alert("Translation error - please tell Alex about this!");
       throw fail;
   },
-  tree = BSOMetaJSParser.matchAll(s, "topLevel", undefined, function(m, i) {
+  tree = parser.matchAll(s, "topLevel", undefined, function(m, i) {
     throw objectThatDelegatesTo(fail, {errorPos: i});
   });
-  if (config.options.ast)
-    return JSON.stringify(tree, null, 2);
+  if (translator)
+    return translator.match(tree, "trans", undefined, translationError)
   else
-    return BSOMetaJSTranslator.match(tree, "trans", undefined, translationError)
+    return JSON.stringify(tree, null, 2);
 };
 
-let ometa = function(s) {
-  return eval(translateCode(s));
-};
+let start = function() {
+  let config = Options.parseArguments(CmdOptions, ARGV);
 
-
-let ometaSource = loadFile(config.arguments[0]);
-
-try {
-  print(translateCode(ometaSource));
-} catch (e) {
-  if (e.errorPos !== undefined) {
-    let pos = indexToPosition(ometaSource, e.errorPos);
-    log('Parsing error at : line ' + pos.line + ' offset ' + pos.offset + '\n\n');
+  if (config.options.help) {
+    Options.printHelp('gnometa', CmdOptions);
+    return -1;
   }
-  throw e;
-}
+
+  eval(loadFile("ometa-base.js"));
+  eval(loadFile("bs-js-compiler.js"));
+  eval(loadFile("bs-ometa-optimizer.js"));
+  eval(loadFile("bs-ometa-compiler.js"));
+  eval(loadFile("bs-ometa-js-compiler.js"));
+
+  let ometaSource = loadFile(config.arguments[0]);
+
+  try {
+    if (config.options.base)
+      print(loadFile('./ometa-base.js'));
+    print(translateCode(ometaSource,
+                        BSOMetaJSParser,
+                        config.options.ast ? null : BSOMetaJSTranslator));
+  } catch (e) {
+    if (e.errorPos !== undefined) {
+      let pos = indexToPosition(ometaSource, e.errorPos);
+      log('Parsing error at : line ' + pos.line + ' offset ' + pos.offset + '\n\n');
+    }
+    throw e;
+  }
+};
+
+start();
