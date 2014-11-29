@@ -204,9 +204,11 @@ let getTag = (function() {
 
 
 // the failure exception
-
-let fail = new Error();
-fail.toString = function() { return "match failed"; };
+if (!window._OMetafail) {
+  window._OMetafail = new Error();
+  window._OMetafail.toString = function() { return "match failed"; };
+}
+let fail = window._OMetafail;
 
 // streams and memoization
 
