@@ -119,7 +119,7 @@ let BSOMetaTranslator = ometa {
            | []                            -> '',
   trans    = [:t apply(t):ans]             -> ans,
   transFn  = trans:x                       -> x
-}
+};
 BSOMetaTranslator.jumpTableCode = function(cases) {
   var buf = new StringBuffer();
   buf.nextPutAll("(function(){switch(this._apply('anything')){");
