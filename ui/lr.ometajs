@@ -1,0 +1,9 @@
+let LeftRecursion = ometa {
+  number = <digit+ ('.' digit+)?>:f spaces -> [#number, parseFloat(f)],
+  expr = expr:a "+" spaces number:b -> ['+', a, b]
+       | expr:a "-" spaces number:b -> ['-', a, b]
+       | number:a -> a
+};
+
+let plop = 2, coin = 'trois', coincoin = #trois;
+log(LeftRecursion.matchAll('3 + 4', 'expr'));

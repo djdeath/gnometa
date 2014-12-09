@@ -1,0 +1,8 @@
+let StructureMapper = ometa {
+  trans     = [ :name :start :stop [ trans*:xs ] ] -> { title: name,
+                                                        start: start,
+                                                        stop: stop,
+                                                        children: xs
+                                                      },
+  topLevel  = [ trans:x ]                          -> [ x ]
+};
