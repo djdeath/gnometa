@@ -60,7 +60,7 @@ ArrayView.prototype = {
       let [status, iter] = this._store.get_iter(path);
       if (!status)
         return;
-      callback(this._controller.getValue(iter));
+      callback(this.getValue({ iter: iter, path: path }));
     }.bind(this);
 
     this._widget.connect('row-activated', emitValue);
@@ -72,6 +72,22 @@ ArrayView.prototype = {
     return this._widget;
   },
 
+  _insertBefore: function(parent, sibling) {
+    let ret = { iter: null, path: null };
+    ret.iter = this._store.insert_before(parent.iter, sibling);
+    ret.path = this._store.get_path(ret.iter);
+    return ret;
+  },
+  _set: function(it, data, values) {
+    let columns = values.map(function(el, idx) { return idx; });
+    this._store.set(it.iter, columns, values);
+    this._dataMap[it.path.to_string()] = data;
+  },
+  getValue: function(it) {
+    return this._dataMap[it.path.to_string()];
+  },
+
+  getDataController: function() { return this._controller; },
   setDataController: function(controller) {
     this._controller = controller;
 
@@ -83,9 +99,8 @@ ArrayView.prototype = {
     let types = model.map(function(el) { return el.type; });
 
     this._store = new Gtk.TreeStore();
-    this._controller.insertBefore = this._store.insert_before.bind(this._store);
-    this._controller.get = this._store.get_value.bind(this._store);
-    this._controller.set = this._store.set.bind(this._store);
+    this._controller.insertBefore = this._insertBefore.bind(this);
+    this._controller.set = this._set.bind(this);
 
     this._store.set_column_types(types);
     this._widget.model = this._store;
@@ -122,7 +137,9 @@ ArrayView.prototype = {
   },
   _refreshView: function() {
     this._store.clear();
-    this._controller.render(null, this._data);
+    this._dataMap = {}
+    let iter = { iter: null, path: null };
+    this._controller.render(iter, this._data);
   },
 };
 
@@ -140,17 +157,9 @@ if (TEST) {
                 renderer: 'text' } ];
     },
 
-    getValue: function(iter) {
-      return {
-        title: this.get(iter, 0),
-        start: this.get(iter, 1),
-        stop: this.get(iter, 2),
-      };
-    },
-
     render: function(parent, data) {
       let iter = this.insertBefore(parent, null);
-      this.set(iter, [0, 1, 2], [data.title, data.start, data.stop]);
+      this.set(iter, data, [data.title, data.start, data.stop]);
       for (let i = 0; i < data.children.length; i++)
         this.render(iter, data.children[i]);
     },

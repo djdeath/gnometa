@@ -27,22 +27,13 @@ scrolled = new Gtk.ScrolledWindow();
 let popoverview = new ArrayView.ArrayView();
 popoverview.setDataController({
   getModel: function() {
-    return [{ type: GObject.TYPE_STRING, renderer: 'text' },
-            { type: GObject.TYPE_INT, renderer: 'text' },
-            { type: GObject.TYPE_INT, renderer: 'text' } ];
-  },
-  getValue: function(iter) {
-    return {
-      title: this.get(iter, 0),
-      start: this.get(iter, 1),
-      stop: this.get(iter, 2),
-    };
+    return [{ type: GObject.TYPE_STRING, renderer: 'text' }];
   },
   render: function(parent, data) {
     for (let i = 0; i < data.length; i++) {
       let item = data[i];
       let iter = this.insertBefore(parent, null);
-      this.set(iter, [0, 1, 2], [item.title, item.start, item.stop]);
+      this.set(iter, item, [item.title]);
     }
   },
 });
@@ -58,16 +49,9 @@ structview.setDataController({
             { type: GObject.TYPE_INT, renderer: 'text' },
             { type: GObject.TYPE_INT, renderer: 'text' } ];
   },
-  getValue: function(iter) {
-    return {
-      title: this.get(iter, 0),
-      start: this.get(iter, 1),
-      stop: this.get(iter, 2),
-    };
-  },
   render: function(parent, data) {
     let iter = this.insertBefore(parent, null);
-    this.set(iter, [0, 1, 2], [data.title, data.start, data.stop]);
+    this.set(iter, data, [data.title, data.start, data.stop]);
     for (let i = 0; i < data.children.length; i++)
       this.render(iter, data.children[i]);
   },
