@@ -244,10 +244,7 @@ OMInputStreamEnd.prototype.tail = function() { throw fail; };
 Array.prototype.at  = function(idx) { return this[idx]; };
 String.prototype.at = String.prototype.charAt;
 
-let nbOMInputStream = 0;
 let ListOMInputStream = function(lst, idx) {
-  nbOMInputStream += 1;
-  //log('new ListOMInputStream idx=' + idx + ' stack=' + (new Error).stack);
   this.memo = { };
   this.lst  = lst;
   this.idx  = idx;
@@ -289,13 +286,12 @@ Failer.prototype.used = false;
 // the OMeta "class" and basic functionality
 
 let OMeta = {
-  //nbCalls: 0,
-  _createStructure: function (rule, start, stop) {
-    return [ rule, start, stop, [] ];
+  _createStructure: function(rule, start, stop, value, children) {
+    if (children)
+      return [ rule, start, stop, value, children, ];
+    return [ rule, start, stop, value, [], ];
   },
-  _updateStructure: function (struct) {
-    if (this._lookaheadCount > 0)
-      return;
+  _updateStructure: function(struct) {
     if (OMeta[struct[0]] === undefined &&
         // start !== stop
         struct[1] !== struct[2]) {
@@ -323,6 +319,7 @@ let OMeta = {
               struct[0],
               struct[1],
               children[children.length - 1][2],
+              struct[3],
               children,
             ]);
             return;
@@ -334,7 +331,6 @@ let OMeta = {
     }
   },
   _apply: function(rule) {
-    //this.nbCalls += 1;
     var start = this.pos();
     var memoRec = this.input.memo[rule];
     if (memoRec == undefined) {
@@ -367,7 +363,7 @@ let OMeta = {
       throw fail;
     }
     var stop = this.pos();
-    this._updateStructure(this._createStructure(rule, start, stop));
+    this._updateStructure(this._createStructure(rule, start, stop, memoRec.ans));
 
     this.input = memoRec.nextInput;
     return memoRec.ans;
@@ -437,19 +433,11 @@ let OMeta = {
     }
     throw fail;
   },
-  _lookaheadCount: 0,
   _lookahead: function(x) {
-    this._lookaheadCount++;
-    try {
-      var origInput = this.input,
-      r         = x.call(this);
-      this.input = origInput;
-      this._lookaheadCount--;
-      return r;
-    } catch (f) {
-      this._lookaheadCount--;
-      throw f;
-    }
+    var origInput = this.input,
+        r         = x.call(this);
+    this.input = origInput;
+    return r;
   },
   _or: function() {
     var origInput = this.input;
@@ -602,10 +590,15 @@ let OMeta = {
     return this._apply(r);
   },
   foreign: function(g, r) {
+    var start = this.pos();
     var gi  = objectThatDelegatesTo(g, {input: makeOMInputStreamProxy(this.input),
                                         _structure: []}),
         ans = gi._apply(r);
     this.input = gi.input.target;
+    var stop = this.pos();
+
+    this._updateStructure(this._createStructure('foreign', start, stop, ans, gi.getStructure()));
+
     return ans;
   },
 
@@ -732,8 +725,6 @@ let OMeta = {
     m.initialize();
     try {
       let ret = realArgs.length == 1 ? m._apply.call(m, realArgs[0]) : m._applyWithArgs.apply(m, realArgs);
-      //log('calls: ' + m.nbCalls + ' streams: ' + nbOMInputStream);
-      //log(JSON.stringify(m.structure, null, 2));
       callback(null, m, ret);
     } catch (f) {
       if (f == fail && callback != undefined) {
@@ -769,5 +760,5 @@ let OMeta = {
 };
 
 let StructureMapper=objectThatDelegatesTo(OMeta,{
-"trans":function(){var $elf=this,_fromIdx=this.input.idx,name,start,stop,xs;this._form(function(){name=this._apply("anything");start=this._apply("anything");stop=this._apply("anything");return this._form(function(){return (xs=this._many(function(){return this._apply("trans");}));});});return ({"title": name,"start": start,"stop": stop,"children": xs});},
+"trans":function(){var $elf=this,_fromIdx=this.input.idx,name,start,stop,value,xs;this._form(function(){name=this._apply("anything");start=this._apply("anything");stop=this._apply("anything");value=this._apply("anything");return this._form(function(){return (xs=this._many(function(){return this._apply("trans");}));});});return ({"title": name,"start": start,"stop": stop,"value": value,"children": xs});},
 "topLevel":function(){var $elf=this,_fromIdx=this.input.idx,x;this._form(function(){return (x=this._apply("trans"));});return [x];}})

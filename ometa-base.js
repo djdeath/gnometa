@@ -286,7 +286,52 @@ Failer.prototype.used = false;
 // the OMeta "class" and basic functionality
 
 let OMeta = {
+  _createStructure: function(rule, start, stop, value, children) {
+    if (children)
+      return [ rule, start, stop, value, children, ];
+    return [ rule, start, stop, value, [], ];
+  },
+  _updateStructure: function(struct) {
+    if (OMeta[struct[0]] === undefined &&
+        // start !== stop
+        struct[1] !== struct[2]) {
+      if (this._structure.length < 1) {
+        this._structure.push(struct);
+      } else {
+        let lastChild = this._structure[this._structure.length - 1];
+        if (lastChild[1] == struct[1] && // start
+            lastChild[2] == struct[2]) { // stop
+          // Override same match
+          lastChild[0].name = struct[0]; // name
+        } else {
+          // Group if needed (could use dichotomie here...)
+          let istart = -1;
+          for (let i = 0; i < this._structure.length; i++) {
+            let child = this._structure[i];
+            if (child[1] >= struct[1]) { // start
+              istart = i;
+              break;
+            }
+          }
+          if (istart != -1) {
+            let children = this._structure.splice(istart, this._structure.length - istart);
+            this._structure.push([
+              struct[0],
+              struct[1],
+              children[children.length - 1][2],
+              struct[3],
+              children,
+            ]);
+            return;
+          }
+          // Or just append
+          this._structure.push(struct);
+        }
+      }
+    }
+  },
   _apply: function(rule) {
+    var start = this.pos();
     var memoRec = this.input.memo[rule];
     if (memoRec == undefined) {
       var origInput = this.input,
@@ -317,6 +362,9 @@ let OMeta = {
       memoRec.used = true;
       throw fail;
     }
+    var stop = this.pos();
+    this._updateStructure(this._createStructure(rule, start, stop, memoRec.ans));
+
     this.input = memoRec.nextInput;
     return memoRec.ans;
   },
@@ -542,9 +590,15 @@ let OMeta = {
     return this._apply(r);
   },
   foreign: function(g, r) {
-    var gi  = objectThatDelegatesTo(g, {input: makeOMInputStreamProxy(this.input)}),
+    var start = this.pos();
+    var gi  = objectThatDelegatesTo(g, {input: makeOMInputStreamProxy(this.input),
+                                        _structure: []}),
         ans = gi._apply(r);
     this.input = gi.input.target;
+    var stop = this.pos();
+
+    this._updateStructure(this._createStructure('foreign', start, stop, ans, gi.getStructure()));
+
     return ans;
   },
 
@@ -655,39 +709,47 @@ let OMeta = {
     });
   },
 
-  initialize: function() { },
+  initialize: function() {},
+  getStructure: function() {
+    return this._structure;
+  },
   // match and matchAll are a grammar's "public interface"
-  _genericMatch: function(input, rule, args, matchFailed) {
+  _genericMatch: function(input, rule, args, callback) {
     if (args == undefined)
       args = [];
     var realArgs = [rule];
     for (var idx = 0; idx < args.length; idx++)
       realArgs.push(args[idx]);
-    var m = objectThatDelegatesTo(this, {input: input});
+    var m = objectThatDelegatesTo(this, {input: input,
+                                         _structure: []});
     m.initialize();
     try {
-      return realArgs.length == 1 ? m._apply.call(m, realArgs[0]) : m._applyWithArgs.apply(m, realArgs);
+      let ret = realArgs.length == 1 ? m._apply.call(m, realArgs[0]) : m._applyWithArgs.apply(m, realArgs);
+      callback(null, m, ret);
     } catch (f) {
-      if (f == fail && matchFailed != undefined) {
+      if (f == fail && callback != undefined) {
         var input = m.input;
         if (input.idx != undefined) {
           while (input.tl != undefined && input.tl.idx != undefined)
             input = input.tl;
           input.idx--;
         }
-        return matchFailed(m, input.idx);
+        var err = new Error();
+        err.idx = input.idx;
+        callback(err, m);
+        return;
       }
       throw f;
     }
   },
-  match: function(obj, rule, args, matchFailed) {
-    return this._genericMatch([obj].toOMInputStream(), rule, args, matchFailed);
+  match: function(obj, rule, args, callback) {
+    return this._genericMatch([obj].toOMInputStream(), rule, args, callback);
   },
   matchAll: function(listyObj, rule, args, matchFailed) {
     return this._genericMatch(listyObj.toOMInputStream(), rule, args, matchFailed);
   },
   createInstance: function() {
-    var m = objectThatDelegatesTo(this);
+    var m = objectThatDelegatesTo(this, { _structure: [] });
     m.initialize();
     m.matchAll = function(listyObj, aRule) {
       this.input = listyObj.toOMInputStream();

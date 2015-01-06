@@ -15,7 +15,7 @@ const CmdOptions = [
     shortName: 'b',
     requireArgument: false,
     defaultValue: false,
-    help: 'Include the base compiler library (useful for standalone programs)',
+    help: 'Include the base compiler library (useful for standalone compilers)',
   },
   {
     name: 'help',
@@ -52,17 +52,27 @@ let indexToPosition = function(source, idx) {
 };
 
 let translateCode = function(s, parser, translator) {
-  var translationError = function(m, i) {
-      alert("Translation error - please tell Alex about this!");
-      throw fail;
-  },
-  tree = parser.matchAll(s, "topLevel", undefined, function(m, i) {
-    throw objectThatDelegatesTo(fail, {errorPos: i});
+  let result = null;
+
+  parser.matchAll(s, "topLevel", undefined, function(err, m, tree) {
+    if (err)
+      throw err;
+
+    //log(JSON.stringify(m.structure, null, 2));
+
+    if (translator)
+      translator.match(tree, "trans", undefined, function(err, m, code) {
+        if (err) {
+          alert("Translation error - please tell Alex about this!");
+          throw err;
+        }
+        result = code;
+      });
+    else
+      result = JSON.stringify(tree, null, 2);
   });
-  if (translator)
-    return translator.match(tree, "trans", undefined, translationError)
-  else
-    return JSON.stringify(tree, null, 2);
+
+  return result;
 };
 
 let start = function() {
@@ -79,18 +89,19 @@ let start = function() {
   eval(loadFile("bs-ometa-compiler.js"));
   eval(loadFile("bs-ometa-js-compiler.js"));
 
+  let ometaSource = null;
   try {
     if (config.options.base)
       print(loadFile('./ometa-base.js'));
     for (let i = 0; i < config.arguments.length; i++) {
-      let ometaSource = loadFile(config.arguments[i]);
+      ometaSource = loadFile(config.arguments[i]);
       print(translateCode(ometaSource,
                           BSOMetaJSParser,
                           config.options.ast ? null : BSOMetaJSTranslator));
     }
   } catch (e) {
-    if (e.errorPos !== undefined) {
-      let pos = indexToPosition(ometaSource, e.errorPos);
+    if (e.idx !== undefined) {
+      let pos = indexToPosition(ometaSource, e.idx);
       log('Parsing error at : line ' + pos.line + ' offset ' + pos.offset + '\n\n');
     }
     throw e;
