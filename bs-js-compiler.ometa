@@ -89,10 +89,10 @@ let BSJSParser = ometa {
                | "string":s                                                          -> [#string, s]
                | "function" funcRest
                | "new" "name":n "(" listOf(#expr, ','):as ")"                        -> [#new, n].concat(as)
-               | "[" listOf(#expr, ','):es "]"                                       -> [#arr].concat(es)
+               | "[" listOf(#expr, ','):es ( "," | empty ) "]"                       -> [#arr].concat(es)
                | json
                | re,
-  json         = "{" listOf(#jsonBinding, ','):bs "}"                                -> [#json].concat(bs),
+  json         = "{" listOf(#jsonBinding, ','):bs ( "," | empty ) "}"                -> [#json].concat(bs),
   jsonBinding  = jsonPropName:n ":" expr:v                                           -> [#binding, n, v],
   jsonPropName = "name" | "number" | "string",
   re           = spaces <'/' reBody '/' reFlag*>:x                                   -> [#regExpr, x],
