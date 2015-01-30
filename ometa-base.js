@@ -725,22 +725,28 @@ let OMeta = {
     m.initialize();
     try {
       let ret = realArgs.length == 1 ? m._apply.call(m, realArgs[0]) : m._applyWithArgs.apply(m, realArgs);
-      callback(null, m, ret);
+      if (callback)
+        callback(null, m, ret);
+      return ret;
     } catch (f) {
-      if (f == fail && callback != undefined) {
-        var input = m.input;
-        if (input.idx != undefined) {
-          while (input.tl != undefined && input.tl.idx != undefined)
-            input = input.tl;
-          input.idx--;
-        }
-        var err = new Error();
-        err.idx = input.idx;
-        callback(err, m);
-        return;
+      if (f != fail)
+        throw f;
+
+      var einput = m.input;
+      if (einput.idx != undefined) {
+        while (einput.tl != undefined && einput.tl.idx != undefined)
+          einput = einput.tl;
+        einput.idx--;
       }
-      throw f;
+      var err = new Error();
+
+      err.idx = einput.idx;
+      if (callback)
+        callback(err, m);
+      else
+        throw err;
     }
+    return null;
   },
   match: function(obj, rule, args, callback) {
     return this._genericMatch([obj].toOMInputStream(), rule, args, callback);
