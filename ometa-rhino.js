@@ -101,7 +101,7 @@ let start = function() {
   } catch (e) {
     if (e.idx !== undefined) {
       let pos = indexToPosition(ometaSource, e.idx);
-      log('Parsing error at : line ' + pos.line + ' offset ' + pos.offset + '\n\n');
+      log('Parsing error at : line ' + pos.line + ' offset ' + pos.offset);
     }
     throw e;
   }
