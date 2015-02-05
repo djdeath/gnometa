@@ -39,8 +39,7 @@ let printFile = function(path) {
 let alert = log;
 
 let indexToPosition = function(source, idx) {
-  linePos = 0;
-  lineNum = 0;
+  let lineNum = 0, linePos = 0;
   for (let i = 0; i < idx; i++) {
     if (source.charAt(i) == '\n') {
       linePos = i;
