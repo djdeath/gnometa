@@ -88,7 +88,7 @@ let BSJSParser = ometa {
                | "number":n                                                          -> [#number, n]
                | "string":s                                                          -> [#string, s]
                | "function" funcRest
-               | "new" "name":n "(" listOf(#expr, ','):as ")"                        -> [#new, n].concat(as)
+               | "new" primExpr:e                                                    -> [#new, e]
                | "[" listOf(#expr, ','):es ( "," | empty ) "]"                       -> [#arr].concat(es)
                | json
                | re,
@@ -217,7 +217,7 @@ let BSJSTranslator = ometa {
   func     :args curlyTrans:body                        -> ('(function (' + args.join(',') + ')' + body + ')'),
   call     trans:fn trans*:args                         -> (fn + '(' + args.join(',') + ')'),
   send     :msg trans:recv trans*:args                  -> (recv + '.' + msg + '(' + args.join(',') + ')'),
-  new      :cls trans*:args                             -> ('new ' + cls + '(' + args.join(',') + ')'),
+  new      trans:x                                      -> ('new ' + x),
   assignVar :name trans:val                             -> (name + '=' + val),
   noAssignVar :name                                     -> name,
   throw    trans:x                                      -> ('throw ' + x),
