@@ -22,7 +22,13 @@ OMETA = $(OO) echo " GEN " $@;
 
 gen: $(OMETA_STEP_GEN)
 
-install: $(OMETA_GEN)
+commit: $(OMETA_GEN)
+
+install:
+	$(OO) test -n "$(PREFIX)" || (echo "No prefix given, please define PREFIX" && false)
+	$(OO) echo "Installing to $(PREFIX)"
+	$(OO) install -t $(PREFIX)/bin gnometa
+	$(OO) install -t $(PREFIX)/share/gnometa gnometa
 
 clean:
 	$(OO) rm -f $(OMETA_STEP_GEN)
