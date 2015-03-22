@@ -90,6 +90,8 @@ let start = function() {
 
   let ometaSource = null;
   try {
+    print('// This file was generated using Gnometa\n' +
+          '// https://github.com/djdeath/gnometa\n');
     if (config.options.base)
       print(loadFile('./ometa-base.js'));
     for (let i = 0; i < config.arguments.length; i++) {
