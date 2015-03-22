@@ -1,4 +1,5 @@
 let BSOMetaParser = ometa {
+  enum :r :d     = listOf(r, d):v ("," | empty) -> v,
   space          = ^space | fromTo('//', '\n') | fromTo('/*', '*/'),
   nameFirst      = '_' | '$' | letter,
   nameRest       = nameFirst | digit,
@@ -73,7 +74,7 @@ let BSOMetaParser = ometa {
                                                          ),
   grammar        = keyword('ometa') ( "(" name:sni ")" -> sni
                                     | empty -> 'OMeta' ):sn
-                   "{" listOf(#rule, ','):rs "}"                       BSOMetaOptimizer.optimizeGrammar(
+  "{" enum(#rule, ','):rs "}"                                             BSOMetaOptimizer.optimizeGrammar(
                                                                             [#Grammar, sn].concat(rs)
                                                                           )
 }

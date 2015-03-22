@@ -1,4 +1,5 @@
 let BSJSParser = ometa {
+  enum :r :d   = listOf(r, d):v ("," | empty) -> v,
   space        = ^space | fromTo('//', '\n') | fromTo('/*', '*/'),
   nameFirst    = letter | '$' | '_',
   nameRest     = nameFirst | digit,
@@ -89,10 +90,10 @@ let BSJSParser = ometa {
                | "string":s                                                          -> [#string, s]
                | "function" funcRest
                | "new" primExpr:e                                                    -> [#new, e]
-               | "[" listOf(#expr, ','):es ( "," | empty ) "]"                       -> [#arr].concat(es)
+               | "[" enum(#expr, ','):es "]"                                         -> [#arr].concat(es)
                | json
                | re,
-  json         = "{" listOf(#jsonBinding, ','):bs ( "," | empty ) "}"                -> [#json].concat(bs),
+  json         = "{" enum(#jsonBinding, ','):bs "}"                                  -> [#json].concat(bs),
   jsonBinding  = jsonPropName:n ":" expr:v                                           -> [#binding, n, v],
   jsonPropName = "name" | "number" | "string",
   re           = spaces <'/' reBody '/' reFlag*>:x                                   -> [#regExpr, x],
