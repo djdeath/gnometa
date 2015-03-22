@@ -633,7 +633,7 @@ let OMeta = {
     this._pred(typeof r === "string");
     return r;
   },
-  "char": function() {
+  char: function() {
     var r = this._apply("anything");
     this._pred(typeof r === "string" && r.length == 1);
     return r;
