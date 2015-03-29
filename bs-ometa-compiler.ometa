@@ -1,3 +1,31 @@
+let Locals = ometa {
+  trans = [:t ?(t == #name) :n ]                                  -> [t, this._renameVariable(n)]
+        | [:t ?(t == #get) :n ]                                   -> [t, this._renameVariable(n)]
+        | [:t (&anything:e ( ?(typeof e != "string" &&
+                               e.length != undefined &&
+                               e.length > 0) trans
+                             | anything ))*:ts ]                  -> [t].concat(ts),
+
+  rename = [ :allowed { this._allowed = allowed; } trans:result ] ->  result
+
+};
+Locals._renameVariable = function(name) {
+  if (name != '$elf' && this._allowed[name])
+    return '$vars.' + name;
+  return name;
+};
+
+let BSSemActionParser = ometa(BSJSParser) {
+  curlySemAction = "{" expr:r sc "}"          -> r
+                 | "{" (srcElem:s &srcElem -> s)*:ss
+                   ( expr:r sc -> [#return, r] | srcElem):s {ss.push(s)}
+                   "}"                        -> [#send, #call,
+                                                  [#func, [], [#begin].concat(ss)],
+                                                  [#this]],
+  semAction      = curlySemAction
+                 | primExpr:r spaces          -> r
+};
+
 let BSOMetaParser = ometa {
   enum :r :d     = listOf(r, d):v ("," | empty) -> v,
   space          = ^space | fromTo('//', '\n') | fromTo('/*', '*/'),
@@ -22,9 +50,10 @@ let BSOMetaParser = ometa {
   application    = "^"          name:rule args:as                      -> [#App, "super",        "'" + rule + "'"].concat(as)
                  | name:grm "." name:rule args:as                      -> [#App, "foreign", grm, "'" + rule + "'"].concat(as)
                  |              name:rule args:as                      -> [#App, rule].concat(as),
-  hostExpr       = BSSemActionParser.expr:r                               BSJSTranslator.trans(r),
-  curlyHostExpr  = BSSemActionParser.curlySemAction:r                     BSJSTranslator.trans(r),
-  primHostExpr   = BSSemActionParser.semAction:r                          BSJSTranslator.trans(r),
+  localsVars :s  =                                                        Locals.rename([this.locals, s]),
+  hostExpr       = BSSemActionParser.expr:r           localsVars(r):rr    BSJSTranslator.trans(rr),
+  curlyHostExpr  = BSSemActionParser.curlySemAction:r localsVars(r):rr    BSJSTranslator.trans(rr),
+  primHostExpr   = BSSemActionParser.semAction:r      localsVars(r):rr    BSJSTranslator.trans(rr),
   atomicHostExpr = curlyHostExpr | primHostExpr,
   semAction      = curlyHostExpr:x                                     -> [#Act, x]
                  | "!"  atomicHostExpr:x                               -> [#Act, x],
@@ -66,9 +95,8 @@ let BSOMetaParser = ometa {
                  | "("  expr:x ")"                                     -> x,
   ruleName       = name
                  | spaces tsString,
-  rule           = &(ruleName:n) !(this.locals = {'$elf=this': true, '_fromIdx=this.input.idx': true})
-                     rulePart(n):x ("," rulePart(n))*:xs               -> [#Rule, n, ownPropertyNames(this.locals),
-                                                                            [#Or, x].concat(xs)],
+  rule           = &(ruleName:n) !(this.locals = {})
+                     rulePart(n):x ("," rulePart(n))*:xs               -> [#Rule, n, [#Or, x].concat(xs)],
   rulePart :rn   = ruleName:n ?(n == rn) expr4(false):b1 ( "=" expr:b2 -> [#And, b1, b2]
                                                          | empty       -> b1
                                                          ),
@@ -96,7 +124,7 @@ let BSOMetaTranslator = ometa {
   Opt        transFn:x                     -> ['this._opt(',           x, ')']                                     .join(''),
   Many       transFn:x                     -> ['this._many(',          x, ')']                                     .join(''),
   Many1      transFn:x                     -> ['this._many1(',         x, ')']                                     .join(''),
-  Set        :n trans:v                    -> [n, '=', v]                                                          .join(''),
+  Set        :n trans:v                    -> ['$vars.', n, '=', v]                                                .join(''),
   Not        transFn:x                     -> ['this._not(',           x, ')']                                     .join(''),
   Lookahead  transFn:x                     -> ['this._lookahead(',     x, ')']                                     .join(''),
   Form       transFn:x                     -> ['this._form(',          x, ')']                                     .join(''),
@@ -110,7 +138,7 @@ let BSOMetaTranslator = ometa {
   Parenthesis transFn:x                    -> ['(', x, ')']                                                        .join(''),
 
   Rule       :name {this.rName = name; }
-             locals:ls trans:body          -> ['\n"', name, '":function(){', ls, body, ';}']            .join(''),
+             trans:body                    -> ['\n"', name, '":function(){var $elf=this, $vars={};', body, ';}']   .join(''),
   Grammar    :sName
              {this.sName = sName}
              trans*:rules                  -> ['objectThatDelegatesTo(', sName, ',{', rules.join(','), '})'].join(''),

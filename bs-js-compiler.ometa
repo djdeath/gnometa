@@ -161,17 +161,6 @@ for (var idx = 0; idx < keywords.length; idx++)
 BSJSParser._isKeyword = function(k) { return this.keywords.hasOwnProperty(k); };
 
 
-let BSSemActionParser = ometa(BSJSParser) {
-  curlySemAction = "{" expr:r sc "}"                                         -> r
-                 | "{" (srcElem:s &srcElem -> s)*:ss
-                       ( expr:r sc -> [#return, r] | srcElem):s {ss.push(s)}
-                   "}"                                                       -> [#send, #call,
-                                                                                        [#func, [], [#begin].concat(ss)],
-                                                                                        [#this]],
-  semAction      = curlySemAction
-                 | primExpr:r spaces                                         -> r
-};
-
 let BSJSTranslator = ometa {
   trans      = [:t apply(t):ans]     -> ans,
   curlyTrans = [#begin curlyTrans:r] -> r

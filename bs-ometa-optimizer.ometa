@@ -25,7 +25,7 @@ let BSNullOptimization = ometa {
   JumpTable  ([:c trans:e] -> [c, e])*:ces -> ['JumpTable'].concat(ces),
   Interleave ([:m trans:p] -> [m, p])*:xs  -> ['Interleave'].concat(xs),
 
-  Rule       :name :ls trans:body          -> ['Rule', name, ls, body]
+  Rule       :name trans:body              -> ['Rule', name, body]
 };
 BSNullOptimization.initialize = function() { this._didSomething = false; };
 
@@ -117,7 +117,7 @@ let BSFunctionOptimization = ometa {
   Interleave ([:m functioned:p] -> [m, p])*:xs            -> ['Interleave'].concat(xs),
 
 
-  Rule       :name anything:ls somethingThatReturns:body -> ['Rule', name, ls, body]
+  Rule       :name somethingThatReturns:body              -> ['Rule', name, body]
 };
 
 let BSOMetaOptimizer = ometa {
