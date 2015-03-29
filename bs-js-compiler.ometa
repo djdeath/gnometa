@@ -183,6 +183,7 @@ let BSJSTranslator = ometa {
   continue                                              -> 'continue',
   number   :n                                           -> ('(' + n + ')'),
   string   :s                                           -> s.toProgramString(),
+  name     :s                                           -> s,
   regExpr  :x                                           -> x,
   arr      trans*:xs                                    -> ('[' + xs.join(',') + ']'),
   unop     :op trans:x                                  -> ('(' + op + ' ' + x + ')'),
