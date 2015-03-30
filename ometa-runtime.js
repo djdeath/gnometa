@@ -608,26 +608,6 @@ let OMeta = {
       return wanted;
     throw fail;
   },
-  "true": function() {
-    var r = this._apply("anything");
-    this._pred(r === true);
-    return r;
-  },
-  "false": function() {
-    var r = this._apply("anything");
-    this._pred(r === false);
-    return r;
-  },
-  "undefined": function() {
-    var r = this._apply("anything");
-    this._pred(r === undefined);
-    return r;
-  },
-  number: function() {
-    var r = this._apply("anything");
-    this._pred(typeof r === "number");
-    return r;
-  },
   string: function() {
     var r = this._apply("anything");
     this._pred(typeof r === "string");
