@@ -82,7 +82,7 @@ let start = function() {
     return -1;
   }
 
-  eval(loadFile("ometa-base.js"));
+  eval(loadFile("ometa-runtime.js"));
   eval(loadFile("bs-js-compiler.js"));
   eval(loadFile("bs-ometa-optimizer.js"));
   eval(loadFile("bs-ometa-compiler.js"));
@@ -93,7 +93,7 @@ let start = function() {
     print('// This file was generated using Gnometa\n' +
           '// https://github.com/djdeath/gnometa\n');
     if (config.options.base)
-      print(loadFile('./ometa-base.js'));
+      print(loadFile('./ometa-runtime.js'));
     for (let i = 0; i < config.arguments.length; i++) {
       ometaSource = loadFile(config.arguments[i]);
       print(translateCode(ometaSource,
