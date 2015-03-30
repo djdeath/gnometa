@@ -337,7 +337,7 @@ let OMeta = {
       var origInput = this.input,
           failer    = new Failer();
       if (this[rule] === undefined)
-        throw 'tried to apply undefined rule "' + rule + '"';
+        throw new Error('tried to apply undefined rule "' + rule + '"');
       this.input.memo[rule] = failer;
       this.input.memo[rule] = memoRec = {ans: this[rule].call(this),
                                          nextInput: this.input };
@@ -459,7 +459,7 @@ let OMeta = {
         this.input = origInput;
         ans = arguments[idx].call(this);
         if (newInput)
-          throw 'more than one choice matched by "exclusive-OR" in ' + ruleName;
+          throw new Error('more than one choice matched by "exclusive-OR" in ' + ruleName);
         newInput = this.input;
       } catch (f) {
         if (f != fail)
@@ -551,7 +551,7 @@ let OMeta = {
               arguments[idx] = "0";
               break;
             default:
-              throw "invalid mode '" + arguments[idx] + "' in OMeta._interleave";
+              throw new Error("invalid mode '" + arguments[idx] + "' in OMeta._interleave");
             }
             currInput = this.input;
             break;
