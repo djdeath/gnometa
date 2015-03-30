@@ -1,4 +1,6 @@
 OMETA_SOURCES = \
+	ometa-base.ometa \
+	\
 	bs-js-compiler.ometa \
 	bs-ometa-compiler.ometa \
 	bs-ometa-js-compiler.ometa \

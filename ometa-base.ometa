@@ -1,0 +1,17 @@
+// Some helpers
+let BaseStrParser = ometa {
+  string = anything:r ?(typeof r === "string") -> r,
+
+  char = anything:r ?(typeof r === "string" && r.length == 1) -> r,
+
+  space = char:r ?(r.charCodeAt(0) <= 32) -> r,
+  spaces = space*,
+
+  digit = char:r ?(r >= "0" && r <= "9") -> r,
+
+  lower = char:r ?(r >= "a" && r <= "z") -> r,
+  upper = char:r ?(r >= "A" && r <= "Z") -> r,
+  letter = lower | upper,
+
+  letterOrDigit = letter | digit,
+};

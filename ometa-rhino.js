@@ -83,6 +83,7 @@ let start = function() {
   }
 
   eval(loadFile("ometa-runtime.js"));
+  eval(loadFile("ometa-base.js"));
   eval(loadFile("bs-js-compiler.js"));
   eval(loadFile("bs-ometa-optimizer.js"));
   eval(loadFile("bs-ometa-compiler.js"));
