@@ -26,7 +26,7 @@ let BSSemActionParser = ometa(BSJSParser) {
                  | primExpr:r spaces          -> r
 };
 
-let BSOMetaParser = ometa {
+let BSOMetaParser = ometa(BaseStrParser) {
   enum :r :d     = listOf(r, d):v ("," | empty) -> v,
   space          = ^space | fromTo('//', '\n') | fromTo('/*', '*/'),
   nameFirst      = '_' | '$' | letter,

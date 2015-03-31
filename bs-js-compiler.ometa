@@ -1,4 +1,4 @@
-let BSJSParser = ometa {
+let BSJSParser = ometa(BaseStrParser) {
   enum :r :d   = listOf(r, d):v ("," | empty) -> v,
   space        = ^space | fromTo('//', '\n') | fromTo('/*', '*/'),
   nameFirst    = letter | '$' | '_',

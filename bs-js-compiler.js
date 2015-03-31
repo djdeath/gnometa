@@ -1,9 +1,9 @@
 // This file was generated using Gnometa
 // https://github.com/djdeath/gnometa
 
-let BSJSParser=objectThatDelegatesTo(OMeta,{
+let BSJSParser=objectThatDelegatesTo(BaseStrParser,{
 "enum":function(){var $elf=this, $vars={};$vars.r=this._apply("anything");$vars.d=this._apply("anything");$vars.v=this._applyWithArgs("listOf",$vars.r,$vars.d);this._or(function(){return this._applyWithArgs("token",",");},function(){return this._apply("empty");});return $vars.v;},
-"space":function(){var $elf=this, $vars={};return this._or(function(){return OMeta._superApplyWithArgs(this,'space');},function(){return this._applyWithArgs("fromTo","//","\n");},function(){return this._applyWithArgs("fromTo","/*","*/");});},
+"space":function(){var $elf=this, $vars={};return this._or(function(){return BaseStrParser._superApplyWithArgs(this,'space');},function(){return this._applyWithArgs("fromTo","//","\n");},function(){return this._applyWithArgs("fromTo","/*","*/");});},
 "nameFirst":function(){var $elf=this, $vars={};return this._or(function(){return this._apply("letter");},function(){return (function(){switch(this._apply('anything')){case "$":return "$";case "_":return "_";default: throw fail}}).call(this);});},
 "nameRest":function(){var $elf=this, $vars={};return this._or(function(){return this._apply("nameFirst");},function(){return this._apply("digit");});},
 "iName":function(){var $elf=this, $vars={};return this._consumedBy(function(){this._apply("nameFirst");return this._many(function(){return this._apply("nameRest");});});},

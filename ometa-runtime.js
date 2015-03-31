@@ -608,47 +608,6 @@ let OMeta = {
       return wanted;
     throw fail;
   },
-  string: function() {
-    var r = this._apply("anything");
-    this._pred(typeof r === "string");
-    return r;
-  },
-  char: function() {
-    var r = this._apply("anything");
-    this._pred(typeof r === "string" && r.length == 1);
-    return r;
-  },
-  space: function() {
-    var r = this._apply("char");
-    this._pred(r.charCodeAt(0) <= 32);
-    return r;
-  },
-  spaces: function() {
-    return this._many(function() { return this._apply("space"); });
-  },
-  digit: function() {
-    var r = this._apply("char");
-    this._pred(r >= "0" && r <= "9");
-    return r;
-  },
-  lower: function() {
-    var r = this._apply("char");
-    this._pred(r >= "a" && r <= "z");
-    return r;
-  },
-  upper: function() {
-    var r = this._apply("char");
-    this._pred(r >= "A" && r <= "Z");
-    return r;
-  },
-  letter: function() {
-    return this._or(function() { return this._apply("lower"); },
-                    function() { return this._apply("upper"); });
-  },
-  letterOrDigit: function() {
-    return this._or(function() { return this._apply("letter"); },
-                    function() { return this._apply("digit");  });
-  },
   firstAndRest: function(first, rest)  {
      return this._many(function() { return this._apply(rest); },
                        this._apply(first));
