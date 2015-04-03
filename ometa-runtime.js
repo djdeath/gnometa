@@ -608,10 +608,6 @@ let OMeta = {
       return wanted;
     throw fail;
   },
-  firstAndRest: function(first, rest)  {
-     return this._many(function() { return this._apply(rest); },
-                       this._apply(first));
-  },
   seq: function(xs) {
     for (var idx = 0; idx < xs.length; idx++)
       this._applyWithArgs("exactly", xs.at(idx));
