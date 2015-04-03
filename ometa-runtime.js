@@ -622,10 +622,6 @@ let OMeta = {
     this._lookahead(function() { return this._apply(rule); });
     return r;
   },
-  token: function(cs) {
-    this._apply("spaces");
-    return this._applyWithArgs("seq", cs);
-  },
   fromTo: function (x, y) {
     return this._consumedBy(function() {
       this._applyWithArgs("seq", x);

@@ -11,4 +11,5 @@ let BaseStrParser=objectThatDelegatesTo(OMeta,{
 "upper":function(){var $elf=this, $vars={};$vars.r=this._apply("char");this._pred((($vars.r >= "A") && ($vars.r <= "Z")));return $vars.r;},
 "letter":function(){var $elf=this, $vars={};return this._or(function(){return this._apply("lower");},function(){return this._apply("upper");});},
 "letterOrDigit":function(){var $elf=this, $vars={};return this._or(function(){return this._apply("letter");},function(){return this._apply("digit");});},
+"token":function(){var $elf=this, $vars={};$vars.tok=this._apply("anything");this._apply("spaces");return this._applyWithArgs("seq",$vars.tok);},
 "listOf":function(){var $elf=this, $vars={};$vars.rule=this._apply("anything");$vars.delim=this._apply("anything");return this._or(function(){$vars.f=this._apply($vars.rule);$vars.rs=this._many(function(){this._applyWithArgs("token",$vars.delim);return this._apply($vars.rule);});return [$vars.f].concat($vars.rs);},function(){return [];});}})
