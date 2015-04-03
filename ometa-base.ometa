@@ -14,4 +14,7 @@ let BaseStrParser = ometa {
   letter = lower | upper,
 
   letterOrDigit = letter | digit,
+
+  listOf :rule :delim = apply(rule):f (token(delim) apply(rule))*:rs -> [f].concat(rs)
+                      | -> [],
 };

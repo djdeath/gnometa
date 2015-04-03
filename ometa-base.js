@@ -10,4 +10,5 @@ let BaseStrParser=objectThatDelegatesTo(OMeta,{
 "lower":function(){var $elf=this, $vars={};$vars.r=this._apply("char");this._pred((($vars.r >= "a") && ($vars.r <= "z")));return $vars.r;},
 "upper":function(){var $elf=this, $vars={};$vars.r=this._apply("char");this._pred((($vars.r >= "A") && ($vars.r <= "Z")));return $vars.r;},
 "letter":function(){var $elf=this, $vars={};return this._or(function(){return this._apply("lower");},function(){return this._apply("upper");});},
-"letterOrDigit":function(){var $elf=this, $vars={};return this._or(function(){return this._apply("letter");},function(){return this._apply("digit");});}})
+"letterOrDigit":function(){var $elf=this, $vars={};return this._or(function(){return this._apply("letter");},function(){return this._apply("digit");});},
+"listOf":function(){var $elf=this, $vars={};$vars.rule=this._apply("anything");$vars.delim=this._apply("anything");return this._or(function(){$vars.f=this._applyWithArgs("apply",$vars.rule);$vars.rs=this._many(function(){this._applyWithArgs("token",$vars.delim);return this._applyWithArgs("apply",$vars.rule);});return [$vars.f].concat($vars.rs);},function(){return [];});}})
