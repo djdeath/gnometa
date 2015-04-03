@@ -617,11 +617,6 @@ let OMeta = {
       this._applyWithArgs("exactly", xs.at(idx));
     return xs;
   },
-  notLast: function(rule) {
-    var r = this._apply(rule);
-    this._lookahead(function() { return this._apply(rule); });
-    return r;
-  },
   fromTo: function (x, y) {
     return this._consumedBy(function() {
       this._applyWithArgs("seq", x);

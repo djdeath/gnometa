@@ -84,7 +84,7 @@ let BSJumpTableOptimization = ometa(BSNullOptimization) {
   jtChoices :op = jtChoice:c {new JumpTable(op, c)}:jt (jtChoice:c {jt.add(c)})* setHelped -> jt.toTree()
 };
 
-let BSFunctionOptimization = ometa {
+let BSFunctionOptimization = ometa(GenericMatcher) {
   optimize  = trans:x -> x,
 
   trans = [:t ?(this[t] != undefined) apply(t):ans] -> ans,

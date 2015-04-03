@@ -1,4 +1,8 @@
 // Some helpers
+let GenericMatcher = ometa {
+  notLast :rule = apply(rule):r &apply(rule) -> r,
+};
+
 let BaseStrParser = ometa {
   string = anything:r ?(typeof r === "string") -> r,
 
