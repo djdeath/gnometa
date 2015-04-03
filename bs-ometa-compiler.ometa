@@ -112,6 +112,7 @@ BSOMetaParser.hexDigits = "0123456789abcdef";
 // (Note that the "=" in a rule definition is optional, so you can give your rules an "ML feel".)
 let BSOMetaTranslator = ometa {
   App        'super' anything+:args        -> [this.sName, '._superApplyWithArgs(this,', args.join(','), ')']      .join(''),
+  App        :n ?(n == "apply") anything:r -> ['this._apply(', r, ')']                                             .join(''),
   App        :rule   anything+:args        -> ['this._applyWithArgs("', rule, '",',      args.join(','), ')']      .join(''),
   App        :rule                         -> ['this._apply("', rule, '")']                                        .join(''),
   Act        :expr                         -> expr,

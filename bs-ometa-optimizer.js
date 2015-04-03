@@ -4,7 +4,7 @@
 let BSNullOptimization=objectThatDelegatesTo(OMeta,{
 "setHelped":function(){var $elf=this, $vars={};return (this["_didSomething"]=true);},
 "helped":function(){var $elf=this, $vars={};return this._pred(this["_didSomething"]);},
-"trans":function(){var $elf=this, $vars={};this._form(function(){$vars.t=this._apply("anything");this._pred((this[$vars.t] != undefined));return ($vars.ans=this._applyWithArgs("apply",$vars.t));});return $vars.ans;},
+"trans":function(){var $elf=this, $vars={};this._form(function(){$vars.t=this._apply("anything");this._pred((this[$vars.t] != undefined));return ($vars.ans=this._apply($vars.t));});return $vars.ans;},
 "optimize":function(){var $elf=this, $vars={};$vars.x=this._apply("trans");this._apply("helped");return $vars.x;},
 "App":function(){var $elf=this, $vars={};$vars.rule=this._apply("anything");$vars.args=this._many(function(){return this._apply("anything");});return ["App",$vars.rule].concat($vars.args);},
 "Act":function(){var $elf=this, $vars={};$vars.expr=this._apply("anything");return ["Act",$vars.expr];},
@@ -37,8 +37,8 @@ let BSNullOptimization=objectThatDelegatesTo(OMeta,{
 "jtChoice":function(){var $elf=this, $vars={};return this._or(function(){this._form(function(){this._applyWithArgs("exactly","And");this._form(function(){this._applyWithArgs("exactly","App");this._applyWithArgs("exactly","exactly");return ($vars.x=this._apply("quotedString"));});return ($vars.rest=this._many(function(){return this._apply("anything");}));});return [$vars.x,["And"].concat($vars.rest)];},function(){this._form(function(){this._applyWithArgs("exactly","App");this._applyWithArgs("exactly","exactly");return ($vars.x=this._apply("quotedString"));});return [$vars.x,["Act",$vars.x.toProgramString()]];});},
 "jtChoices":function(){var $elf=this, $vars={};$vars.op=this._apply("anything");$vars.c=this._apply("jtChoice");$vars.jt=new JumpTable($vars.op,$vars.c);this._many(function(){$vars.c=this._apply("jtChoice");return $vars.jt.add($vars.c);});this._apply("setHelped");return $vars.jt.toTree();}});let BSFunctionOptimization=objectThatDelegatesTo(OMeta,{
 "optimize":function(){var $elf=this, $vars={};$vars.x=this._apply("trans");return $vars.x;},
-"trans":function(){var $elf=this, $vars={};this._form(function(){$vars.t=this._apply("anything");this._pred((this[$vars.t] != undefined));return ($vars.ans=this._applyWithArgs("apply",$vars.t));});return $vars.ans;},
-"somethingThatReturns":function(){var $elf=this, $vars={};return this._or(function(){this._form(function(){this._applyWithArgs("exactly","And");return ($vars.ans=this._applyWithArgs("apply","AndReturn"));});return $vars.ans;},function(){this._form(function(){this._applyWithArgs("exactly","Set");return ($vars.ans=this._applyWithArgs("apply","Set"));});return ["Return",["Parenthesis",$vars.ans]];},function(){$vars.x=this._apply("trans");return ["Return",$vars.x];});},
+"trans":function(){var $elf=this, $vars={};this._form(function(){$vars.t=this._apply("anything");this._pred((this[$vars.t] != undefined));return ($vars.ans=this._apply($vars.t));});return $vars.ans;},
+"somethingThatReturns":function(){var $elf=this, $vars={};return this._or(function(){this._form(function(){this._applyWithArgs("exactly","And");return ($vars.ans=this._apply("AndReturn"));});return $vars.ans;},function(){this._form(function(){this._applyWithArgs("exactly","Set");return ($vars.ans=this._apply("Set"));});return ["Return",["Parenthesis",$vars.ans]];},function(){$vars.x=this._apply("trans");return ["Return",$vars.x];});},
 "functioned":function(){var $elf=this, $vars={};$vars.x=this._apply("somethingThatReturns");return ["Function",$vars.x];},
 "AndReturn":function(){var $elf=this, $vars={};$vars.xs=this._many(function(){return this._applyWithArgs("notLast","trans");});$vars.y=this._apply("somethingThatReturns");return ["And"].concat($vars.xs.concat([$vars.y]));},
 "And":function(){var $elf=this, $vars={};return ["And"];},
