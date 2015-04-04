@@ -112,9 +112,10 @@ BSOMetaParser.hexDigits = "0123456789abcdef";
 // (Note that the "=" in a rule definition is optional, so you can give your rules an "ML feel".)
 let BSOMetaTranslator = ometa {
   App        'super' anything+:args        -> [this.sName, '._superApplyWithArgs(this,', args.join(','), ')']      .join(''),
-  App        :n ?(n == "apply") anything:r -> ['this._apply(', r, ')']                                             .join(''),
-  App        :rule   anything+:args        -> ['this._applyWithArgs("', rule, '",',      args.join(','), ')']      .join(''),
-  App        :rule                         -> ['this._apply("', rule, '")']                                        .join(''),
+  App        :rule anything*:args
+    ( ?(this._optimizedCall(rule, args))   -> ['this.', this._callables[rule].name, '(', args.join(','), ')'].join('')
+    | ?(args.length < 1)                   -> ['this._apply("', rule, '")'].join('')
+    |                                      -> ['this._applyWithArgs("', rule, '",', args.join(','), ')'].join('') ),
   Act        :expr                         -> expr,
   Pred       :expr                         -> ['this._pred(', expr, ')']                                           .join(''),
   Or         transFn*:xs                   -> ['this._or(',  xs.join(','), ')']                                    .join(''),
@@ -149,6 +150,18 @@ let BSOMetaTranslator = ometa {
            | []                            -> '',
   trans    = [:t apply(t):ans]             -> ans,
   transFn  = trans:x                       -> x
+};
+BSOMetaTranslator._callables = {
+  anything: { name: "anything", nbArgs: 0, },
+  apply:    { name: "_apply",   nbArgs: 1, },
+  end:      { name: "end",      nbArgs: 0, },
+  exactly:  { name: "exactly",  nbArgs: 1, },
+  fromTo:   { name: "fromTo",   nbArgs: 2, },
+  seq:      { name: "seq",      nbArgs: 1, },
+};
+BSOMetaTranslator._optimizedCall = function(rule, args) {
+  let c = this._callables[rule];
+  return c && c.nbArgs == args.length;
 };
 BSOMetaTranslator.jumpTableCode = function(cases) {
   var buf = new StringBuffer();
