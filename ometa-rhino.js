@@ -106,8 +106,7 @@ let start = function() {
       let pos = indexToPosition(ometaSource, e.idx);
       log('Parsing error at : line ' + pos.line + ' offset ' + pos.offset);
     } else {
-      log('Internal error :');
-      log(e.stack);
+      log('Internal error : ' + e);
     }
     throw e;
   }
