@@ -571,7 +571,6 @@ let OMeta = {
       }
     }
   },
-  _currIdx: function() { return this.input.idx; },
 
   // some basic rules
   anything: function() {
