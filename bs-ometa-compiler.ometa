@@ -156,7 +156,6 @@ BSOMetaTranslator._callables = {
   apply:    { name: "_apply",   nbArgs: 1, },
   end:      { name: "end",      nbArgs: 0, },
   exactly:  { name: "exactly",  nbArgs: 1, },
-  fromTo:   { name: "fromTo",   nbArgs: 2, },
   seq:      { name: "seq",      nbArgs: 1, },
 };
 BSOMetaTranslator._optimizedCall = function(rule, args) {

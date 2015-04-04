@@ -23,4 +23,6 @@ let BaseStrParser = ometa {
 
   listOf :rule :delim = apply(rule):f (token(delim) apply(rule))*:rs -> [f].concat(rs)
                       | -> [],
+
+  fromTo :x :y = <seq(x) (~seq(y) char)* seq(y)>
 };
