@@ -111,36 +111,45 @@ BSOMetaParser.hexDigits = "0123456789abcdef";
 // By dispatching on the head of a list, the following idiom allows translators to avoid doing a linear search.
 // (Note that the "=" in a rule definition is optional, so you can give your rules an "ML feel".)
 let BSOMetaTranslator = ometa {
-  App        'super' anything+:args        -> [this.sName, '._superApplyWithArgs(this,', args.join(','), ')']      .join(''),
+  App        'super' anything+:args        -> this._store([this.sName, '._superApplyWithArgs(this,', args.join(','), ')'].join('')),
   App        :rule anything*:args
-    ( ?(this._optimizedCall(rule, args))   -> ['this.', this._callables[rule].name, '(', args.join(','), ')'].join('')
-    | ?(args.length < 1)                   -> ['this._apply("', rule, '")'].join('')
-    |                                      -> ['this._applyWithArgs("', rule, '",', args.join(','), ')'].join('') ),
+    ( ?(this._optimizedCall(rule, args))   -> this._store(['this.', this._callables[rule].name, '(', args.join(','), ')'].join(''))
+    | ?(args.length < 1)                   -> this._store(['this._apply("', rule, '")'].join(''))
+    |                                      -> this._store(['this._applyWithArgs("', rule, '",', args.join(','), ')']     .join('')) ),
   Act        :expr                         -> expr,
-  Pred       :expr                         -> ['this._pred(', expr, ')']                                           .join(''),
-  Or         transFn*:xs                   -> ['this._or(',  xs.join(','), ')']                                    .join(''),
+  Pred       :expr                         -> ['this._pred(', expr, ')']                                                 .join(''),
+  Or         transFn*:xs                   -> this._store(['this._or(',  xs.join(','), ')']                              .join('')),
   XOr        transFn*:xs                       {xs.unshift(this.rName.toProgramString())}
-                                           -> ['this._xor(', xs.join(','), ')']                                    .join(''),
+                                           -> this._store(['this._xor(', xs.join(','), ')']                              .join('')),
   And        transFn+:xs                   -> xs.join(';'),
   And                                      -> 'undefined',
-  Opt        transFn:x                     -> ['this._opt(',           x, ')']                                     .join(''),
-  Many       transFn:x                     -> ['this._many(',          x, ')']                                     .join(''),
-  Many1      transFn:x                     -> ['this._many1(',         x, ')']                                     .join(''),
-  Set        :n trans:v                    -> ['$vars.', n, '=', v]                                                .join(''),
-  Not        transFn:x                     -> ['this._not(',           x, ')']                                     .join(''),
-  Lookahead  transFn:x                     -> ['this._lookahead(',     x, ')']                                     .join(''),
-  Form       transFn:x                     -> ['this._form(',          x, ')']                                     .join(''),
-  ConsBy     transFn:x                     -> ['this._consumedBy(',    x, ')']                                     .join(''),
-  IdxConsBy  transFn:x                     -> ['this._idxConsumedBy(', x, ')']                                     .join(''),
-  JumpTable  jtCase*:cases                 -> this.jumpTableCode(cases),
-  Interleave intPart*:xs                   -> ['this._interleave(', xs.join(','), ')']                             .join(''),
+  Opt        transFn:x                     -> this._store(['this._opt(',           x, ')']                               .join('')),
+  Many       transFn:x                     -> this._store(['this._many(',          x, ')']                               .join('')),
+  Many1      transFn:x                     -> this._store(['this._many1(',         x, ')']                               .join('')),
+  Set        :n trans:v                    -> ['$vars.', n, '=', v]                                                      .join(''),
+  Not        transFn:x                     -> this._store(['this._not(',           x, ')']                               .join('')),
+  Lookahead  transFn:x                     -> ['this._lookahead(',     x, ').value']                                     .join(''),
+  Form       transFn:x                     -> this._store(['this._form(',          x, ')']                               .join('')),
+  ConsBy     transFn:x                     -> this._store(['this._consumedBy(',    x, ')']                               .join('')),
+  IdxConsBy  transFn:x                     -> this._store(['this._idxConsumedBy(', x, ')']                               .join('')),
+  JumpTable  { this._storeVar++; }
+             jtCase*:cases
+             { this._storeVar--; }         -> this._store(this.jumpTableCode(cases)),
+  Interleave intPart*:xs                   -> this._store(['this._interleave(', xs.join(','), ')']                       .join('')),
 
-  Function   transFn*:xs                   -> ['function(){', xs.join(';'), ';}']                                  .join(''),
-  Return     transFn:x                     -> ['return ', x]                                                       .join(''),
-  Parenthesis transFn:x                    -> ['(', x, ')']                                                        .join(''),
+  Function { this._storeVar++; }
+           transFn*:xs
+           { this._storeVar--; }           -> ['function(){var $r', this._storeVar + 1,
+                                               '=this._createStructure(null);', xs.join(';'),
+                                               ';return $r', this._storeVar + 1, ';}']                                   .join(''),
+  Return transFn:x                         -> ['$r', this._storeVar, '.value=', x]                                       .join(''),
+  Parenthesis transFn:x                    -> ['(', x, ')']                                                              .join(''),
 
-  Rule       :name {this.rName = name; }
-             trans:body                    -> ['\n"', name, '":function(){var $elf=this, $vars={};', body, ';}']   .join(''),
+  Rule       :name {this.rName = name;
+                    this._storeVar = 0; }
+             trans:body                    -> ['\n"', name, '":function(){var $elf=this,',
+                                               '$vars={},',
+                                               '$r0=this._createStructure("', name, '");', body, ';return $r0;}']        .join(''),
   Grammar    :sName
              {this.sName = sName}
              trans*:rules                  -> ['objectThatDelegatesTo(', sName, ',{', rules.join(','), '})'].join(''),
@@ -164,9 +173,13 @@ BSOMetaTranslator._optimizedCall = function(rule, args) {
 };
 BSOMetaTranslator.jumpTableCode = function(cases) {
   var buf = new StringBuffer();
-  buf.nextPutAll("(function(){switch(this._apply('anything')){");
+  buf.nextPutAll("(function(){var $r" + (this._storeVar + 1) + "=this._createStructure(null);")
+  buf.nextPutAll("switch(this._appendStructure($r" + (this._storeVar + 1) + ",this._apply('anything'))){");
   for (var i = 0; i < cases.length; i += 1)
-    buf.nextPutAll("case " + cases[i][0] + ":" + cases[i][1] + ";");
-  buf.nextPutAll("default: throw fail}}).call(this)");
+    buf.nextPutAll("case " + cases[i][0] + ":" + cases[i][1] + ";break;");
+  buf.nextPutAll("default: throw fail}return $r" + (this._storeVar + 1) + ";}).call(this)");
   return buf.contents();
+};
+BSOMetaTranslator._store = function(str) {
+  return ['this._appendStructure($r', this._storeVar, ',', str, ')'].join('');
 };
