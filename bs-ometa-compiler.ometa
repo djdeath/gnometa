@@ -121,7 +121,7 @@ let BSOMetaTranslator = ometa {
   Or         transFn*:xs                   -> ['this._or(',  xs.join(','), ')']                                    .join(''),
   XOr        transFn*:xs                       {xs.unshift(this.rName.toProgramString())}
                                            -> ['this._xor(', xs.join(','), ')']                                    .join(''),
-  And        transFn*:xs                   -> xs.join(';'),
+  And        transFn+:xs                   -> xs.join(';'),
   And                                      -> 'undefined',
   Opt        transFn:x                     -> ['this._opt(',           x, ')']                                     .join(''),
   Many       transFn:x                     -> ['this._many(',          x, ')']                                     .join(''),

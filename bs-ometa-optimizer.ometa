@@ -91,13 +91,13 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
 
   somethingThatReturns = [ exactly(#And) apply(#AndReturn):ans ] -> ans
                        | [ exactly(#Set) apply(#Set):ans ] -> ['Return', ['Parenthesis', ans]]
+                       | [ exactly(#And) ] -> ['Return',  ['And']]
                        | trans:x -> ['Return', x],
 
   functioned = somethingThatReturns:x -> ['Function', x],
 
 
   AndReturn  notLast(#trans)*:xs somethingThatReturns:y   -> ['And'].concat(xs.concat([y])),
-  And                                                     -> ['And'], // Special case...
 
   Or         functioned*:xs                               -> ['Or'].concat(xs),
   XOr        functioned*:xs                               -> ['XOr'].concat(xs),
