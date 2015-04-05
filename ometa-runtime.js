@@ -407,12 +407,11 @@ let OMeta = {
     return r;
   },
   _or: function() {
-    var r = this._createStructure(null);
+    var origInput = this.input;
     for (var idx = 0; idx < arguments.length; idx++) {
       try {
-        this.input = r.input;
-        this._appendStructure(r, arguments[idx].call(this));
-        return r;
+        this.input = origInput;
+        return arguments[idx].call(this);
       } catch (f) {
         if (f != fail)
           throw f;
@@ -421,11 +420,11 @@ let OMeta = {
     throw fail;
   },
   _xor: function(ruleName) {
-    var idx = 1, newInput, r = this._createStructure(null);
+    var idx = 1, newInput, origInput = this.input, r;
     while (idx < arguments.length) {
       try {
-        this.input = r.input;
-        this._appendStructure(r, arguments[idx].call(this));
+        this.input = origInput;
+        r = arguments[idx].call(this);
         if (newInput)
           throw new Error('more than one choice matched by "exclusive-OR" in ' + ruleName);
         newInput = this.input;
@@ -447,7 +446,7 @@ let OMeta = {
   _opt: function(x) {
     var r = this._createStructure(null);
     try {
-      this._appendStructure(r, x.call(this));
+      r = x.call(this);
     } catch (f) {
       if (f != fail)
         throw f;
@@ -624,7 +623,7 @@ let OMeta = {
 
       err.idx = einput.idx;
       if (callback)
-        callback(err, m);
+        callback(err);
       else
         throw err;
     }

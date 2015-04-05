@@ -53,14 +53,14 @@ let indexToPosition = function(source, idx) {
 let translateCode = function(s, parser, translator) {
   let result = null;
 
-  parser.matchAll(s, "topLevel", undefined, function(err, m, tree) {
+  parser.matchAll(s, "topLevel", undefined, function(err, struct, tree) {
     if (err)
       throw err;
 
     //log(JSON.stringify(m.structure, null, 2));
 
     if (translator)
-      translator.match(tree, "trans", undefined, function(err, m, code) {
+      translator.match(tree, "trans", undefined, function(err, struct, code) {
         if (err) {
           alert("Translation error - please tell Alex about this!");
           throw err;
