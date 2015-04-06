@@ -390,7 +390,7 @@ let OMeta = {
   _not: function(x) {
     var r = this._createStructure(null);
     try {
-      x.call(this);
+      this._appendStructure(r, x.call(this));
     } catch (f) {
       if (f != fail)
         throw f;

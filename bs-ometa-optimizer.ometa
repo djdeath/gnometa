@@ -90,14 +90,28 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
   trans = [:t ?(this[t] != undefined) apply(t):ans] -> ans,
 
   somethingThatReturns = [ exactly(#And) apply(#AndReturn):ans ] -> ans
-                       | [ exactly(#Set) apply(#Set):ans ] -> ['Return', ['Parenthesis', ans]]
-                       | [ exactly(#And) ] -> ['Return',  ['And']]
-                       | trans:x -> ['Return', x],
+                       | [ exactly(#And) end ]                   -> ['ReturnStructure', ['And']]
+                       | [ generatesStructure:t apply(t):ans ]   -> ['ReturnStructure', ['Store', ans]]
+                       | [ exactly(#Set) apply(#Set):ans ]       -> ['ReturnStructure', ['Parenthesis', ans]]
+                       | trans:x                                 -> ['ReturnStructure', x],
 
-  functioned = somethingThatReturns:x -> ['Function', x],
+  generatesStructure = #Or | #XOr | #Opt | #Many | #Many1 | #Not
+                     | #Lookahead | #Form | #ConsBy | #IdxConsBy
+                     | #App | #JumpTable | #Interleave,
 
+  somethingThatCanPass      = [ generatesStructure:t
+                                apply(t):ans ]            -> ans,
 
-  AndReturn  notLast(#trans)*:xs somethingThatReturns:y   -> ['And'].concat(xs.concat([y])),
+  storeSomething            = [ generatesStructure:t
+                                apply(t):ans ]            -> ['Store', ans]
+                            | trans:x,
+  storeSomethingThatReturns = somethingThatReturns:x,
+
+  functioned = somethingThatCanPass:x                     -> ['Function', ['Return', x]]
+             | storeSomethingThatReturns:x                -> ['FunctionStructure', x],
+
+  AndReturn  notLast(#storeSomething)*:xs
+             storeSomethingThatReturns:y                  -> ['And'].concat(xs.concat([y])),
 
   Or         functioned*:xs                               -> ['Or'].concat(xs),
   XOr        functioned*:xs                               -> ['XOr'].concat(xs),
@@ -110,14 +124,17 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
   ConsBy     functioned:x                                 -> ['ConsBy',    x],
   IdxConsBy  functioned:x                                 -> ['IdxConsBy', x],
   App        :rule anything*:args                         -> ['App', rule].concat(args),
-  Act        :expr                                        -> ['Act', expr],
-  Pred       :expr                                        -> ['Pred', expr],
-  Set        :n trans:v                                   -> ['Set', n, v],
   JumpTable  ([:c somethingThatReturns:e] -> [c, e])*:ces -> ['JumpTable'].concat(ces),
   Interleave ([:m functioned:p] -> [m, p])*:xs            -> ['Interleave'].concat(xs),
 
+  // Do not generate structure :
+  Act        :expr                                        -> ['Act', expr],
+  Pred       :expr                                        -> ['Pred', expr],
+  Set        :n storeSomething:v                          -> ['Set', n, v],
 
-  Rule       :name somethingThatReturns:body              -> ['Rule', name, body]
+  Rule       :name
+             ( somethingThatCanPass:b -> ['ReturnStructure', ['Store', b]]
+             | somethingThatReturns ):body                -> ['Rule', name, body]
 };
 
 let BSOMetaOptimizer = ometa {
