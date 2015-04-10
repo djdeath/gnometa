@@ -57,7 +57,7 @@ let translateCode = function(s, parser, translator) {
     if (err)
       throw err;
 
-    //log(JSON.stringify(m.structure, null, 2));
+    //log(JSON.stringify(struct, function(k, v) { if (k == 'start' || k == 'stop') return v.idx; return v; }, 2));
 
     if (translator)
       translator.match(tree, "trans", undefined, function(err, struct, code) {
