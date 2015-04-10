@@ -24,6 +24,11 @@ OMETA = $(OO) echo " GEN " $@;
 
 gen: $(OMETA_STEP_GEN)
 
+ui/standalone.js: $(OMETA_SOURCES)
+	$(OO) $(OMETA) ./gnometa -b $^ > $@
+
+standalone: ui/standalone.js
+
 commit: $(OMETA_GEN)
 
 install:
