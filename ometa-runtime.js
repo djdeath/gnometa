@@ -286,10 +286,11 @@ Failer.prototype.used = false;
 // the OMeta "class" and basic functionality
 
 let OMeta = {
-  _createStructure: function(name) {
+  _startStructure: function(name) {
     return {
       name: name,
-      input: this.input,
+      start: this.input,
+      stop: null,
       children: [],
       value: null,
     };
@@ -297,6 +298,10 @@ let OMeta = {
   _appendStructure: function(structure, child) {
     structure.children.push(child);
     return (structure.value = child.value);
+  },
+  _endStructure: function(structure) {
+    structure.stop = this.input;
+    return structure;
   },
 
   _apply: function(rule) {
@@ -388,23 +393,23 @@ let OMeta = {
     throw fail;
   },
   _not: function(x) {
-    var r = this._createStructure(null);
+    var r = this._startStructure(null);
     try {
       this._appendStructure(r, x.call(this));
     } catch (f) {
       if (f != fail)
         throw f;
-      this.input = r.input;
+      this.input = r.start;
       r.value = true;
-      return r;
+      return this._endStructure(r);
     }
     throw fail;
   },
   _lookahead: function(x) {
-    var r = this._createStructure(null);
+    var r = this._startStructure(null);
     this._appendStructure(r, x.call(this));
-    this.input = r.input;
-    return r;
+    this.input = r.start;
+    return this._endStructure(r);
   },
   _or: function() {
     var origInput = this.input;
@@ -444,18 +449,18 @@ let OMeta = {
     this._xor = this._or;
   },
   _opt: function(x) {
-    var r = this._createStructure(null);
+    var r = this._startStructure(null);
     try {
       r = x.call(this);
     } catch (f) {
       if (f != fail)
         throw f;
-      this.input = r.input;
+      this.input = r.start;
     }
-    return r;
+    return this._endStructure(r);
   },
   _many: function(x) {
-    var r = this._createStructure(null), ans = arguments[1];
+    var r = this._startStructure(null), ans = arguments[1];
     if (ans != undefined) { this._appendStructure(r, ans); ans = [ans.value]; }
     else { ans = []; }
     while (true) {
@@ -471,11 +476,11 @@ let OMeta = {
       }
     }
     r.value = ans
-    return r;
+    return this._endStructure(r);
   },
   _many1: function(x) { return this._many(x, x.call(this)); },
   _form: function(x) {
-    var r = this._createStructure(null);
+    var r = this._startStructure(null);
     this._appendStructure(r, this._apply("anything"));
     var v = r.value;
     if (!isSequenceable(v))
@@ -487,22 +492,22 @@ let OMeta = {
     this._appendStructure(r, this._apply("end"));
     r.value = v;
     this.input = origInput;
-    return r;
+    return this._endStructure(r);
   },
   _consumedBy: function(x) {
-    var r = this._createStructure(null);
+    var r = this._startStructure(null);
     this._appendStructure(r, x.call(this));
-    r.value = r.input.upTo(this.input);
-    return r;
+    r.value = r.start.upTo(this.input);
+    return this._endStructure(r);
   },
   _idxConsumedBy: function(x) {
-    var r = this._createStructure(null);
+    var r = this._startStructure(null);
     this._appendStructure(r, x.call(this));
-    r.value = {fromIdx: r.input.idx, toIdx: this.input.idx};
-    return r;
+    r.value = {fromIdx: r.start.idx, toIdx: this.input.idx};
+    return this._endStructure(r);
   },
   _interleave: function(mode1, part1, mode2, part2 /* ..., moden, partn */) {
-    var currInput = this.input, ans = [], r = this._createStructure(null);
+    var currInput = this.input, ans = [], r = this._startStructure(null);
     for (var idx = 0; idx < arguments.length; idx += 2)
       ans[idx / 2] = (arguments[idx] == "*" || arguments[idx] == "+") ? [] : undefined;
     while (true) {
@@ -543,7 +548,7 @@ let OMeta = {
       if (idx == arguments.length) {
         if (allDone) {
           r.value = ans;
-          return r;
+          return this._endStructure(r);
         } else
           throw fail;
       }
@@ -552,10 +557,10 @@ let OMeta = {
 
   // some basic rules
   anything: function() {
-    var r = this._createStructure(null);
+    var r = this._startStructure(null);
     r.value = this.input.head();
     this.input = this.input.tail();
-    return r;
+    return this._endStructure(r);
   },
   end: function() {
     return this._not(function() { return this._apply("anything"); });
@@ -564,9 +569,9 @@ let OMeta = {
     return this.input.idx;
   },
   empty: function() {
-    var r = this._createStructure(null);
+    var r = this._startStructure(null);
     r.value = true;
-    return r;
+    return this._endStructure(r);
   },
   apply: function(r) {
     return this._apply(r);
@@ -580,18 +585,18 @@ let OMeta = {
 
   //  some useful "derived" rules
   exactly: function(wanted) {
-    var r = this._createStructure(null);
+    var r = this._startStructure(null);
     this._appendStructure(r, this._apply("anything"));
     if (wanted === r.value)
-      return r;
+      return this._endStructure(r);
     throw fail;
   },
   seq: function(xs) {
-    var r = this._createStructure(null);
+    var r = this._startStructure(null);
     for (var idx = 0; idx < xs.length; idx++)
       this._applyWithArgs("exactly", xs.at(idx));
     r.value = xs;
-    return r;
+    return this._endStructure(r);
   },
 
   initialize: function() {},

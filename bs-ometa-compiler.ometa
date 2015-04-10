@@ -143,8 +143,8 @@ let BSOMetaTranslator = ometa {
   FunctionStructure { this._storeVar++; }
            transFn+:xs
            { this._storeVar--; }           -> ['function(){var $r', this._storeVar + 1,
-                                               '=this._createStructure(null);', xs.join(';'),
-                                               ';return $r', this._storeVar + 1, ';}']                                   .join(''),
+                                               '=this._startStructure(null);', xs.join(';'),
+                                               ';return this._endStructure($r', this._storeVar + 1, ');}']               .join(''),
   ReturnStructure transFn:x                -> ['$r', this._storeVar, '.value=', x]                                       .join(''),
   Return transFn:x                         -> ['return ', x]                                                             .join(''),
   Parenthesis transFn:x                    -> ['(', x, ')']                                                              .join(''),
@@ -154,7 +154,8 @@ let BSOMetaTranslator = ometa {
                     this._storeVar = 0; }
              trans:body                    -> ['\n"', name, '":function(){var $elf=this,',
                                                '$vars={},',
-                                               '$r0=this._createStructure("', name, '");', body, ';return $r0;}']        .join(''),
+                                               '$r0=this._startStructure("', name, '");', body,
+                                               ';return this._endStructure($r0);}']                                      .join(''),
   Grammar    :sName
              {this.sName = sName}
              trans*:rules                  -> ['objectThatDelegatesTo(', sName, ',{', rules.join(','), '})'].join(''),
@@ -178,10 +179,10 @@ BSOMetaTranslator._optimizedCall = function(rule, args) {
 };
 BSOMetaTranslator.jumpTableCode = function(cases) {
   var buf = new StringBuffer();
-  buf.nextPutAll("(function(){var $r" + (this._storeVar + 1) + "=this._createStructure(null);")
+  buf.nextPutAll("(function(){var $r" + (this._storeVar + 1) + "=this._startStructure(null);")
   buf.nextPutAll("switch(this._appendStructure($r" + (this._storeVar + 1) + ",this._apply('anything'))){");
   for (var i = 0; i < cases.length; i += 1)
     buf.nextPutAll("case " + cases[i][0] + ":" + cases[i][1] + ";break;");
-  buf.nextPutAll("default: throw fail}return $r" + (this._storeVar + 1) + ";}).call(this)");
+  buf.nextPutAll("default: throw fail}return this._endStructure($r" + (this._storeVar + 1) + ");}).call(this)");
   return buf.contents();
 };
