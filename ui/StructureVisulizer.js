@@ -32,8 +32,10 @@ popoverview.setDataController({
   render: function(parent, data) {
     for (let i = 0; i < data.length; i++) {
       let item = data[i];
-      let iter = this.insertBefore(parent, null);
-      this.set(iter, item, [item.title]);
+      if (item.name != null) {
+        let iter = this.insertBefore(parent, null);
+        this.set(iter, item, [item.name]);
+      }
     }
   },
 });
@@ -51,7 +53,7 @@ structview.setDataController({
   },
   render: function(parent, data) {
     let iter = this.insertBefore(parent, null);
-    this.set(iter, data, [data.title, data.start, data.stop]);
+    this.set(iter, data, [data.name != null ? data.name : "", data.start.idx, data.stop.idx]);
     for (let i = 0; i < data.children.length; i++)
       this.render(iter, data.children[i]);
   },
@@ -65,7 +67,7 @@ let _structure = null;
 let findMatchingStructureChild = function(parent, offset) {
   for (let i = 0; i < parent.children.length; i++) {
     let child = parent.children[i];
-    if (child.start <= offset && child.stop >= offset)
+    if (child.start.idx <= offset && child.stop.idx >= offset)
       return child;
   }
   return null;
@@ -83,21 +85,14 @@ let getMatchStructure = function(offset) {
 
 //
 textview.onChange(function(text) {
-  OMeta.BSOMetaJSParser.matchAll(text, "topLevel", undefined, function(err, m, tree) {
+  OMeta.BSOMetaJSParser.matchAll(text, "topLevel", undefined, function(err, tree, value) {
     if (err) {
       log('Parsing: ' + err);
       return;
     }
 
-    Structure.StructureMapper.match(m.getStructure(), "topLevel", undefined, function(err, n, tree) {
-      if (err) {
-        log('Mapping: ' + err);
-        return;
-      }
-
-      _structure = tree[0];
-      structview.setData(_structure);
-    }.bind(this));
+    _structure = tree;
+    structview.setData(_structure);
   });
 }.bind(this));
 
@@ -111,7 +106,7 @@ textview.getWidget().connect('motion-notify-event', function(widget, event) {
   let offset = textview.getOffsetAtLocation(x, y),
       matches = getMatchStructure(offset),
       match = matches[0];
-  textview.hightlightRange(match.start, match.stop);
+  textview.hightlightRange(match.start.idx, match.stop.idx);
   //log('offset=' + offset + ' match=' + match.title + ' range=' + match.start + ',' + match.stop);
 
   return false;
@@ -135,9 +130,9 @@ textview.getWidget().connect('button-release-event', function(widget, event) {
   let offset = textview.getOffsetAtLocation(x, y),
       matches = getMatchStructure(offset),
       match = matches[0];
-  textview.hightlightRange(match.start, match.stop);
+  textview.hightlightRange(match.start.idx, match.stop.idx);
 
-  let rect = textview.getRectForRange(match.start, match.stop);
+  let rect = textview.getRectForRange(match.start.idx, match.stop.idx);
   positionPopover(popover, widget,
                   rect.x + rect.width / 2,
                   rect.y + rect.height);
@@ -154,10 +149,10 @@ textview.getWidget().connect('button-release-event', function(widget, event) {
 
 //
 structview.onChange(function(value) {
-  textview.hightlightRange(value.start, value.stop);
+  textview.hightlightRange(value.start.idx, value.stop.idx);
 }.bind(this));
 popoverview.onChange(function(value) {
-  textview.hightlightRange(value.start, value.stop);
+  textview.hightlightRange(value.start.idx, value.stop.idx);
 }.bind(this));
 
 
