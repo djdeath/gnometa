@@ -1,3 +1,6 @@
+OMETA_RUNTIME = \
+	ometa-runtime.js
+
 OMETA_SOURCES = \
 	ometa-base.ometa \
 	\
@@ -24,8 +27,8 @@ OMETA = $(OO) echo " GEN " $@;
 
 gen: $(OMETA_STEP_GEN)
 
-ui/standalone.js: $(OMETA_SOURCES)
-	$(OO) $(OMETA) ./gnometa -b $^ > $@
+ui/standalone.js: $(OMETA_SOURCES) $(OMETA_RUNTIME)
+	$(OO) $(OMETA) ./gnometa -b $(OMETA_SOURCES) > $@
 
 standalone: ui/standalone.js
 
