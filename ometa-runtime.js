@@ -460,9 +460,8 @@ let OMeta = {
     return this._endStructure(r);
   },
   _many: function(x) {
-    var r = this._startStructure(null), ans = arguments[1];
-    if (ans != undefined) { this._appendStructure(r, ans); ans = [ans.value]; }
-    else { ans = []; }
+    var r = this._startStructure(null), ans = [];
+    if (arguments.length > 1) { this._appendStructure(r, x.call(this)); ans.push(r.value); }
     while (true) {
       var origInput = this.input;
       try {
@@ -478,7 +477,7 @@ let OMeta = {
     r.value = ans
     return this._endStructure(r);
   },
-  _many1: function(x) { return this._many(x, x.call(this)); },
+  _many1: function(x) { return this._many(x, true); },
   _form: function(x) {
     var r = this._startStructure(null);
     this._appendStructure(r, this._apply("anything"));
