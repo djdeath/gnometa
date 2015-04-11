@@ -406,10 +406,10 @@ let OMeta = {
     throw fail;
   },
   _lookahead: function(x) {
-    var r = this._startStructure(null);
-    this._appendStructure(r, x.call(this));
-    this.input = r.start;
-    return this._endStructure(r);
+    var origInput = this.input,
+        r = x.call(this);
+    this.input = origInput;
+    return r;
   },
   _or: function() {
     var origInput = this.input;
