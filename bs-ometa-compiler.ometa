@@ -29,10 +29,6 @@ let BSSemActionParser = ometa(BSJSParser) {
 let BSSemActionTranslator = ometa(BSJSTranslator) {
 };
 
-let jsValue = function(type, value) {
-  return [#Js, [type, value]];
-};
-
 let BSOMetaParser = ometa(BaseStrParser) {
   enum :r :d     = listOf(r, d):v ("," | empty) -> v,
   space          = ^space | fromTo('//', '\n') | fromTo('/*', '*/'),
