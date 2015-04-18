@@ -219,3 +219,7 @@ let BSJSTranslator = ometa {
   case     trans:x trans:y                              -> ('case ' + x + ': '+ y),
   default          trans:y                              -> ('default: ' + y)
 };
+
+let jsValue = function(type, value) {
+  return [#Js, [type, value]];
+};

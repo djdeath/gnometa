@@ -8,7 +8,6 @@ let BSNullOptimization = ometa {
   optimize  = trans:x helped                         -> x,
 
   App        :rule anything*:args          -> ['App', rule].concat(args),
-  Act        :expr                         -> ['Act', expr],
   Pred       :expr                         -> ['Pred', expr],
   Or         trans*:xs                     -> ['Or'].concat(xs),
   XOr        trans*:xs                     -> ['XOr'].concat(xs),
@@ -24,6 +23,8 @@ let BSNullOptimization = ometa {
   IdxConsBy  trans:x                       -> ['IdxConsBy', x],
   JumpTable  ([:c trans:e] -> [c, e])*:ces -> ['JumpTable'].concat(ces),
   Interleave ([:m trans:p] -> [m, p])*:xs  -> ['Interleave'].concat(xs),
+
+  Js         :code                         -> ['Js', code],
 
   Rule       :name trans:body              -> ['Rule', name, body]
 };
@@ -43,13 +44,14 @@ let BSAssociativeOptimization = ometa(BSNullOptimization) {
 };
 
 let BSSeqInliner = ometa(BSNullOptimization) {
-  App        = 'seq' :s end seqString(s):cs setHelped -> ['And'].concat(cs).concat([['Act', s]])
+  App        = 'seq'
+               ['Js' ['string' :s]] end
+               seqString(s):cs setHelped              -> ['And'].concat(cs).concat([jsValue('string', s)])
              | :rule anything*:args                   -> ['App', rule].concat(args),
-  inlineChar = BSOMetaParser.eChar:c ~end             -> ['App', 'exactly', c.toProgramString()],
-  seqString  = &(:s ?(typeof s === 'string'))
-                 ( ['"'  inlineChar*:cs '"' ]         -> cs
-                 | ['\'' inlineChar*:cs '\'']         -> cs
-                 )
+  inlineChar = BSOMetaParser.eChar:c                  -> ['App', 'exactly', jsValue('string', c)],
+  seqString = &(:s ?(typeof s === 'string'))
+              [ inlineChar*:cs ]                      -> cs
+
 };
 
 let JumpTable = function(choiceOp, choice) {
@@ -77,10 +79,9 @@ JumpTable.prototype.toTree = function() {
 let BSJumpTableOptimization = ometa(BSNullOptimization) {
   Or  (jtChoices('Or')  | trans)*:cs -> ['Or'].concat(cs),
   XOr (jtChoices('XOr') | trans)*:cs -> ['XOr'].concat(cs),
-  quotedString  = &BaseStrParser.string [ '"'  (BSOMetaParser.eChar:c ~end -> c)*:cs '"'
-                                        | '\'' (BSOMetaParser.eChar:c ~end -> c)*:cs '\''] -> cs.join(''),
+  quotedString  = ['Js' ['string' :s ]] -> s,
   jtChoice      = ['And' ['App' 'exactly' quotedString:x] anything*:rest]                  -> [x, ['And'].concat(rest)]
-                |        ['App' 'exactly' quotedString:x]                                  -> [x, ['Act', x.toProgramString()]],
+                |        ['App' 'exactly' quotedString:x]                                  -> [x, jsValue('string', x)],
   jtChoices :op = jtChoice:c {new JumpTable(op, c)}:jt (jtChoice:c {jt.add(c)})* setHelped -> jt.toTree()
 };
 
@@ -123,17 +124,19 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
   Form       functioned:x                                 -> ['Form',      x],
   ConsBy     functioned:x                                 -> ['ConsBy',    x],
   IdxConsBy  functioned:x                                 -> ['IdxConsBy', x],
-  App        :rule anything*:args                         -> ['App', rule].concat(args),
+  App        :rule trans*:args                            -> ['App', rule].concat(args),
   JumpTable  ([:c somethingThatReturns:e] -> [c, e])*:ces -> ['JumpTable'].concat(ces),
   Interleave ([:m functioned:p] -> [m, p])*:xs            -> ['Interleave'].concat(xs),
 
   // Do not generate structure :
-  Act        :expr                                        -> ['Act', expr],
   Pred       :expr                                        -> ['Pred', expr],
   Set        :n storeSomething:v                          -> ['Set', n, v],
 
+  Js         :code                                        -> ['Js', code],
+
   Rule       :name
-             ( somethingThatCanPass:b -> ['ReturnStructure', ['Store', b]]
+             ( somethingThatCanPass:b
+                    -> ['ReturnStructure', ['Store', b]]
              | somethingThatReturns ):body                -> ['Rule', name, body]
 };
 
