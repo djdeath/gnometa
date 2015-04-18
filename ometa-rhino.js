@@ -143,7 +143,7 @@ let start = function() {
       ometaSource = loadFile(filename);
       ret += translateCode(ometaSource,
                            BSOMetaJSParser,
-                           config.options.ast ? null : BSOMetaJSTranslator);
+                           config.options.ast ? null : BSOMetaJSTranslator) + "\n";
     }
     if (config.options.output)
       saveFile(config.options.output, ret);
