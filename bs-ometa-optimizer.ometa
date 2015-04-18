@@ -27,7 +27,7 @@ let BSNullOptimization = ometa {
   Js         :code                         -> ['Js', code],
   Location                                 -> ['Location'],
 
-  Rule       :name trans:body              -> ['Rule', name, body]
+  Rule       :name :location trans:body    -> ['Rule', name, location, body]
 };
 BSNullOptimization.initialize = function() { this._didSomething = false; };
 
@@ -136,10 +136,10 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
   Js         :code                                        -> ['Js', code],
   Location                                                -> ['Location'],
 
-  Rule       :name
+  Rule       :name :location
              ( somethingThatCanPass:b
                     -> ['ReturnStructure', ['Store', b]]
-             | somethingThatReturns ):body                -> ['Rule', name, body]
+             | somethingThatReturns ):body                -> ['Rule', name, location, body]
 };
 
 let BSOMetaOptimizer = ometa {

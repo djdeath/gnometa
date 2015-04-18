@@ -102,7 +102,7 @@ let BSOMetaParser = ometa(BaseStrParser) {
   ruleName       = name
                  | spaces tsString,
   rule           = &(ruleName:n) !(this.locals = {})
-                     rulePart(n):x ("," rulePart(n))*:xs               -> [#Rule, n, [#Or, x].concat(xs)],
+                     rulePart(n):x ("," rulePart(n))*:xs               -> [#Rule, n, @location, [#Or, x].concat(xs)],
   rulePart :rn   = ruleName:n ?(n == rn) expr4(false):b1 ( "=" expr:b2 -> [#And, b1, b2]
                                                          | empty       -> b1
                                                          ),
@@ -155,7 +155,7 @@ let BSOMetaTranslator = ometa {
   FunctionStructure { this._storeVar++; }
            transFn+:xs
            { this._storeVar--; }           -> ['function(){var $r', this._storeVar + 1,
-                                               '=this._startStructure(null);', xs.join(';'),
+                                               '=this._startStructure(-1);', xs.join(';'),
                                                ';return this._endStructure($r', this._storeVar + 1, ');}']               .join(''),
   ReturnStructure transFn:x                -> ['$r', this._storeVar, '.value=', x]                                       .join(''),
   Return          transFn:x                -> ['return ', x]                                                             .join(''),
@@ -165,9 +165,10 @@ let BSOMetaTranslator = ometa {
 
   Rule       :name {this.rName = name;
                     this._storeVar = 0; }
+             :location !createSourceMapId():loc { addToSourseMap(loc, location.start.idx, location.stop.idx); }
              trans:body                    -> ['\n"', name, '":function(){var $elf=this,',
                                                '$vars={},',
-                                               '$r0=this._startStructure("', name, '");', body,
+                                               '$r0=this._startStructure(', loc, ');', body,
                                                ';return this._endStructure($r0);}']                                      .join(''),
   Grammar    :sName
              {this.sName = sName}
@@ -194,7 +195,7 @@ BSOMetaTranslator._optimizedCall = function(rule, args) {
 };
 BSOMetaTranslator.jumpTableCode = function(cases) {
   var buf = new StringBuffer();
-  buf.nextPutAll("(function(){var $r" + (this._storeVar + 1) + "=this._startStructure(null);")
+  buf.nextPutAll("(function(){var $r" + (this._storeVar + 1) + "=this._startStructure(-1);")
   buf.nextPutAll("switch(this._appendStructure($r" + (this._storeVar + 1) + ",this._apply('anything'))){");
   for (var i = 0; i < cases.length; i += 1)
     buf.nextPutAll("case " + cases[i][0] + ":" + cases[i][1] + ";break;");

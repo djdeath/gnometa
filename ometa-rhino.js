@@ -18,6 +18,20 @@ const CmdOptions = [
     help: 'Include the base compiler library (useful for standalone compilers)',
   },
   {
+    name: 'output',
+    shortName: 'o',
+    requireArgument: true,
+    defaultValue: null,
+    help: 'Output file for the compiler',
+  },
+  {
+    name: 'source-map',
+    shortName: 's',
+    requireArgument: true,
+    defaultValue: null,
+    help: 'Output file for the source map produced by the compiler',
+  },
+  {
     name: 'help',
     shortName: 'h',
     requireArgument: false,
@@ -26,17 +40,44 @@ const CmdOptions = [
   },
 ];
 
+// Source map helpers
+
+let _sourceMap = {
+  filenames: [],
+  map: [],
+};
+let startFileSourceMap = function(filename) {
+  _sourceMap.filenames.push(filename);
+};
+
+let addToSourseMap = function(id, start, stop) {
+  _sourceMap.map[id] = [ _sourceMap.filenames.length - 1, start, stop ];
+};
+
+let createSourceMapId = function() {
+  return _sourceMap.map.length;
+};
+
+let getSourceMap = function() { return _sourceMap; };
+
+// File helpers
+
 let loadFile = function(path) {
   let file = Gio.File.new_for_path(path);
   let [, source] = file.load_contents(null);
   return '' + source;
 };
 
+let saveFile = function(path, content) {
+  let file = Gio.File.new_for_path(path);
+  file.replace_contents(content, null, false,
+                        Gio.FileCreateFlags.REPLACE_DESTINATION,
+                        null, null);
+};
+
 let printFile = function(path) {
   print(loadFile(path));
 };
-
-let alert = log;
 
 let indexToPosition = function(source, idx) {
   let lineNum = 0, linePos = 0;
@@ -62,7 +103,7 @@ let translateCode = function(s, parser, translator) {
     if (translator)
       translator.match(tree, "trans", undefined, function(err, struct, code) {
         if (err) {
-          alert("Translation error - please tell Alex about this!");
+          log("Translation error - please tell Alex about this!");
           throw err;
         }
         result = code;
@@ -95,12 +136,21 @@ let start = function() {
           '// https://github.com/djdeath/gnometa\n');
     if (config.options.base)
       print(loadFile('./ometa-runtime.js'));
+    let ret = "";
     for (let i = 0; i < config.arguments.length; i++) {
-      ometaSource = loadFile(config.arguments[i]);
-      print(translateCode(ometaSource,
-                          BSOMetaJSParser,
-                          config.options.ast ? null : BSOMetaJSTranslator));
+      let filename = config.arguments[i];
+      startFileSourceMap(filename);
+      ometaSource = loadFile(filename);
+      ret += translateCode(ometaSource,
+                           BSOMetaJSParser,
+                           config.options.ast ? null : BSOMetaJSTranslator);
     }
+    if (config.options.output)
+      saveFile(config.options.output, ret);
+    else
+      print(ret);
+    if (config.options['source-map'])
+      saveFile(config.options['source-map'], JSON.stringify(getSourceMap()));
   } catch (e) {
     if (e.idx !== undefined) {
       let pos = indexToPosition(ometaSource, e.idx);

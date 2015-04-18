@@ -286,9 +286,9 @@ Failer.prototype.used = false;
 // the OMeta "class" and basic functionality
 
 let OMeta = {
-  _startStructure: function(name) {
+  _startStructure: function(id) {
     return {
-      name: name,
+      id: id,
       start: this.input,
       stop: null,
       children: [],
@@ -393,7 +393,7 @@ let OMeta = {
     throw fail;
   },
   _not: function(x) {
-    var r = this._startStructure(null);
+    var r = this._startStructure(-1);
     try {
       this._appendStructure(r, x.call(this));
     } catch (f) {
@@ -449,7 +449,7 @@ let OMeta = {
     this._xor = this._or;
   },
   _opt: function(x) {
-    var r = this._startStructure(null);
+    var r = this._startStructure(-1);
     try {
       r = x.call(this);
     } catch (f) {
@@ -460,7 +460,7 @@ let OMeta = {
     return this._endStructure(r);
   },
   _many: function(x) {
-    var r = this._startStructure(null), ans = [];
+    var r = this._startStructure(-1), ans = [];
     if (arguments.length > 1) { this._appendStructure(r, x.call(this)); ans.push(r.value); }
     while (true) {
       var origInput = this.input;
@@ -479,7 +479,7 @@ let OMeta = {
   },
   _many1: function(x) { return this._many(x, true); },
   _form: function(x) {
-    var r = this._startStructure(null);
+    var r = this._startStructure(-1);
     this._appendStructure(r, this._apply("anything"));
     var v = r.value;
     if (!isSequenceable(v))
@@ -494,19 +494,19 @@ let OMeta = {
     return this._endStructure(r);
   },
   _consumedBy: function(x) {
-    var r = this._startStructure(null);
+    var r = this._startStructure(-1);
     this._appendStructure(r, x.call(this));
     r.value = r.start.upTo(this.input);
     return this._endStructure(r);
   },
   _idxConsumedBy: function(x) {
-    var r = this._startStructure(null);
+    var r = this._startStructure(-1);
     this._appendStructure(r, x.call(this));
     r.value = {fromIdx: r.start.idx, toIdx: this.input.idx};
     return this._endStructure(r);
   },
   _interleave: function(mode1, part1, mode2, part2 /* ..., moden, partn */) {
-    var currInput = this.input, ans = [], r = this._startStructure(null);
+    var currInput = this.input, ans = [], r = this._startStructure(-1);
     for (var idx = 0; idx < arguments.length; idx += 2)
       ans[idx / 2] = (arguments[idx] == "*" || arguments[idx] == "+") ? [] : undefined;
     while (true) {
@@ -556,7 +556,7 @@ let OMeta = {
 
   // some basic rules
   anything: function() {
-    var r = this._startStructure(null);
+    var r = this._startStructure(-1);
     r.value = this.input.head();
     this.input = this.input.tail();
     return this._endStructure(r);
@@ -568,7 +568,7 @@ let OMeta = {
     return this.input.idx;
   },
   empty: function() {
-    var r = this._startStructure(null);
+    var r = this._startStructure(-1);
     r.value = true;
     return this._endStructure(r);
   },
@@ -584,14 +584,14 @@ let OMeta = {
 
   //  some useful "derived" rules
   exactly: function(wanted) {
-    var r = this._startStructure(null);
+    var r = this._startStructure(-1);
     this._appendStructure(r, this._apply("anything"));
     if (wanted === r.value)
       return this._endStructure(r);
     throw fail;
   },
   seq: function(xs) {
-    var r = this._startStructure(null);
+    var r = this._startStructure(-1);
     for (var idx = 0; idx < xs.length; idx++)
       this._applyWithArgs("exactly", xs.at(idx));
     r.value = xs;
