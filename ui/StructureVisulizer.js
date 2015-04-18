@@ -9,6 +9,20 @@ const OMeta = imports.standalone;
 const Structure = imports.StructureMapper;
 
 //
+let loadFile = function(path) {
+  let file = Gio.File.new_for_path(path);
+  let [, source] = file.load_contents(null);
+  return '' + source;
+};
+
+const OMetaMap = JSON.parse(loadFile('standalone.js.map'));
+
+let ometaLabel = function(id) {
+  let sitem = OMetaMap.map[id];
+  return OMetaMap.filenames[sitem[0]] + ':' + sitem[1] + ':' + sitem[2];
+};
+
+//
 Gtk.init(null, null);
 
 let paned = new Gtk.Paned();
@@ -32,9 +46,9 @@ popoverview.setDataController({
   render: function(parent, data) {
     for (let i = 0; i < data.length; i++) {
       let item = data[i];
-      if (item.name != null) {
+      if (item.id >= 0) {
         let iter = this.insertBefore(parent, null);
-        this.set(iter, item, [item.name]);
+        this.set(iter, item, [ometaLabel(item.id)]);
       }
     }
   },
@@ -53,7 +67,8 @@ structview.setDataController({
   },
   render: function(parent, data) {
     let iter = this.insertBefore(parent, null);
-    this.set(iter, data, [data.name != null ? data.name : "", data.start.idx, data.stop.idx]);
+    this.set(iter, data, [data.id >= 0 ? ometaLabel(data.id) : "",
+                          data.start.idx, data.stop.idx]);
     for (let i = 0; i < data.children.length; i++)
       this.render(iter, data.children[i]);
   },
