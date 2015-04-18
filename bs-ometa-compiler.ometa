@@ -130,7 +130,7 @@ let BSOMetaTranslator = ometa {
   Opt        transFn:x                     -> ['this._opt(',           x, ')']                                           .join(''),
   Many       transFn:x                     -> ['this._many(',          x, ')']                                           .join(''),
   Many1      transFn:x                     -> ['this._many1(',         x, ')']                                           .join(''),
-  Set        :n transFn:v                    -> ['$vars.', n, '=', v]                                                      .join(''),
+  Set        :n transFn:v                  -> ['$vars.', n, '=', v]                                                      .join(''),
   Not        transFn:x                     -> ['this._not(',           x, ')']                                           .join(''),
   Lookahead  transFn:x                     -> ['this._lookahead(',     x, ')']                                           .join(''),
   Form       transFn:x                     -> ['this._form(',          x, ')']                                           .join(''),
