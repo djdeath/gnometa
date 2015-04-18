@@ -138,8 +138,8 @@ textview.getWidget().connect('motion-notify-event', function(widget, event) {
 let positionPopover = function(popover, parent, x, y) {
   let allocation = parent.get_allocation();
   let rect = popover.pointing_to;
-  rect.x = x + allocation.x;
-  rect.y = y + allocation.y;
+  rect.x = x + allocation.x - parent.hadjustment.value;
+  rect.y = y + allocation.y - parent.vadjustment.value;
   popover.pointing_to = rect;
 };
 
