@@ -181,9 +181,7 @@ popoverview.onChange(function(value) {
 
 
 //
-let file = Gio.File.new_for_path('./lr.ometajs');
-let [, data] = file.load_contents(null);
-let source = '' + data;
+let source = loadFile(ARGV[0]);
 textview.setData(source);
 
 //
