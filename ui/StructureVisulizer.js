@@ -17,9 +17,17 @@ let loadFile = function(path) {
 
 const OMetaMap = JSON.parse(loadFile('standalone.js.map'));
 
+let _ometaFiles = {};
+let ometaCode = function(filename, start, stop) {
+  if (!_ometaFiles[filename]) {
+    _ometaFiles[filename] = loadFile('../' + filename);
+  }
+  return _ometaFiles[filename].slice(start, stop).trim();
+};
+
 let ometaLabel = function(id) {
   let sitem = OMetaMap.map[id];
-  return OMetaMap.filenames[sitem[0]] + ':' + sitem[1] + ':' + sitem[2];
+  return ometaCode(OMetaMap.filenames[sitem[0]], sitem[1], sitem[2]);
 };
 
 //
@@ -36,7 +44,7 @@ let popover = new Gtk.Popover({
   position: Gtk.PositionType.BOTTOM,
   relative_to: textview.getWidget(),
 });
-popover.set_size_request(150, 200);
+popover.set_size_request(350, 200);
 scrolled = new Gtk.ScrolledWindow();
 let popoverview = new ArrayView.ArrayView();
 popoverview.setDataController({
