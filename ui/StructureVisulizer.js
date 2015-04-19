@@ -106,6 +106,13 @@ let getMatchStructure = function(offset) {
   return matches;
 };
 
+let bestStructureMatch = function(matches) {
+  for (let i = 0; i < matches.length; i++)
+    if (matches[i].stop.idx - matches[i].start.idx >= 2)
+      return [i, matches[i]];
+  return [matches.length - 1, matches[matches.length - 1]];
+};
+
 //
 textview.onChange(function(text) {
   OMeta.BSOMetaJSParser.matchAll(text, "topLevel", undefined, function(err, tree, value) {
@@ -128,7 +135,7 @@ textview.getWidget().connect('motion-notify-event', function(widget, event) {
   let [, x, y] = event.get_coords();
   let offset = textview.getOffsetAtLocation(x, y),
       matches = getMatchStructure(offset),
-      match = matches[0];
+      [idx, match] = bestStructureMatch(matches);
   textview.hightlightRange(match.start.idx, match.stop.idx);
   //log('offset=' + offset + ' match=' + match.title + ' range=' + match.start + ',' + match.stop);
 
@@ -152,7 +159,7 @@ textview.getWidget().connect('button-release-event', function(widget, event) {
   let [, x, y] = event.get_coords();
   let offset = textview.getOffsetAtLocation(x, y),
       matches = getMatchStructure(offset),
-      match = matches[0];
+      [idx, match] = bestStructureMatch(matches);
   textview.hightlightRange(match.start.idx, match.stop.idx);
 
   let rect = textview.getRectForRange(match.start.idx, match.stop.idx);
