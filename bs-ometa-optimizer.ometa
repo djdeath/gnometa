@@ -24,7 +24,7 @@ let BSNullOptimization = ometa {
   JumpTable  ([:c trans:e] -> [c, e])*:ces -> ['JumpTable'].concat(ces),
   Interleave ([:m trans:p] -> [m, p])*:xs  -> ['Interleave'].concat(xs),
 
-  Js         :code                         -> ['Js', code],
+  Js         :locals :code                 -> ['Js', locals, code],
   Location                                 -> ['Location'],
   PopArg                                   -> ['PopArg'],
 
@@ -47,7 +47,7 @@ let BSAssociativeOptimization = ometa(BSNullOptimization) {
 
 let BSSeqInliner = ometa(BSNullOptimization) {
   App        = 'seq'
-               ['Js' ['string' :s]] end
+               ['Js' :locals ['string' :s]] end
                seqString(s):cs setHelped              -> ['And'].concat(cs).concat([jsValue('string', s)])
              | :rule anything*:args                   -> ['App', rule].concat(args),
   inlineChar = BSOMetaParser.eChar:c                  -> ['App', 'exactly', jsValue('string', c)],
@@ -81,7 +81,7 @@ JumpTable.prototype.toTree = function() {
 let BSJumpTableOptimization = ometa(BSNullOptimization) {
   Or  (jtChoices('Or')  | trans)*:cs -> ['Or'].concat(cs),
   XOr (jtChoices('XOr') | trans)*:cs -> ['XOr'].concat(cs),
-  quotedString  = ['Js' ['string' :s ]] -> s,
+  quotedString  = ['Js' :l ['string' :s ]] -> s,
   jtChoice      = ['And' ['App' 'exactly' quotedString:x] anything*:rest]                  -> [x, ['And'].concat(rest)]
                 |        ['App' 'exactly' quotedString:x]                                  -> [x, jsValue('string', x)],
   jtChoices :op = jtChoice:c {new JumpTable(op, c)}:jt (jtChoice:c {jt.add(c)})* setHelped -> jt.toTree()
@@ -134,7 +134,7 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
   Pred       :expr                                        -> ['Pred', expr],
   Set        :n storeSomething:v                          -> ['Set', n, v],
 
-  Js         :code                                        -> ['Js', code],
+  Js         :locals :code                                -> ['Js', locals, code],
   Location                                                -> ['Location'],
   PopArg                                                  -> ['PopArg'],
 

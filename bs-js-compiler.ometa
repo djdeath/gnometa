@@ -220,6 +220,17 @@ let BSJSTranslator = ometa {
   default          trans:y                              -> ('default: ' + y)
 };
 
+let copyObject = function(obj) {
+  let ret = {};
+  for (let i in obj)
+    ret[i] = obj[i];
+  return ret;
+};
+
 let jsValue = function(type, value) {
-  return [#Js, [type, value]];
+  return [#Js, {}, [type, value]];
+};
+
+let jsCode = function(locals, expr) {
+  return [#Js, copyObject(locals), expr];
 };

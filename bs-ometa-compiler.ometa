@@ -1,20 +1,3 @@
-let Locals = ometa {
-  trans = [:t ?(t == #name) :n ]                                  -> [t, this._renameVariable(n)]
-        | [:t ?(t == #get) :n ]                                   -> [t, this._renameVariable(n)]
-        | [:t (&anything:e ( ?(typeof e != "string" &&
-                               e.length != undefined &&
-                               e.length > 0) trans
-                             | anything ))*:ts ]                  -> [t].concat(ts),
-
-  rename = [ :allowed { this._allowed = allowed; } trans:result ] ->  result
-
-};
-Locals._renameVariable = function(name) {
-  if (name != '$elf' && this._allowed[name])
-    return '$vars.' + name;
-  return name;
-};
-
 let BSSemActionParser = ometa(BSJSParser) {
   jsOmetaKeyword :k = spaces '@' iName:n ?(k == n)   -> k,
   primExprHd = jsOmetaKeyword('location')     -> [#Location]
@@ -53,13 +36,12 @@ let BSOMetaParser = ometa(BaseStrParser) {
                  | empty                                               -> [],
   application    = "^"          name:rule args:as                      -> [#App, "super", jsValue(#string, rule)].concat(as)
                  | name:grm "." name:rule args:as                      -> [#App, "foreign",
-                                                                           jsValue(#get, grm),
+                                                                           jsCode(this.locals, [#get, grm]),
                                                                            jsValue(#string, rule)].concat(as)
                  |              name:rule args:as                      -> [#App, rule].concat(as),
-  localsVars :s  =                                                        Locals.rename([this.locals, s]),
-  hostExpr       = BSSemActionParser.expr:r localsVars(r):rr           -> [#Js, rr],
-  curlyHostExpr  = BSSemActionParser.curlySemAction:r localsVars(r):rr -> [#Js, rr],
-  primHostExpr   = BSSemActionParser.semAction:r localsVars(r):rr      -> [#Js, rr],
+  hostExpr       = BSSemActionParser.expr:r                            -> jsCode(copyObject(this.locals), r),
+  curlyHostExpr  = BSSemActionParser.curlySemAction:r                  -> jsCode(copyObject(this.locals), r),
+  primHostExpr   = BSSemActionParser.semAction:r                       -> jsCode(copyObject(this.locals), r),
   atomicHostExpr = curlyHostExpr | primHostExpr,
   semAction      = curlyHostExpr:x
                  | "!"  atomicHostExpr:x,
@@ -118,7 +100,15 @@ BSOMetaParser.hexDigits = "0123456789abcdef";
 let BSSemActionTranslator = ometa(BSJSTranslator) {
   Location                                 -> ['$r', this._storeVal].join(''),
 
-  jstrans = :storeVal { this._storeVal = storeVal; } trans
+  get :n                                   -> this._renameVariable(n),
+  name :n                                  -> this._renameVariable(n),
+
+  jstrans = :storeVal :toRename { this._storeVal = storeVal; this._toRename = toRename; } trans
+};
+BSSemActionTranslator._renameVariable = function(name) {
+  if (name != '$elf' && this._toRename[name])
+    return '$vars.' + name;
+  return name;
 };
 
 // By dispatching on the head of a list, the following idiom allows translators to avoid doing a linear search.
@@ -161,7 +151,7 @@ let BSOMetaTranslator = ometa {
   Return          transFn:x                -> ['return ', x]                                                             .join(''),
   Parenthesis     transFn:x                -> ['(', x, ')']                                                              .join(''),
   Store           transFn:x                -> ['this._appendStructure($r', this._storeVar, ',', x, ')']                  .join(''),
-  Js              transJs,
+  Js              :locals transJs(locals),
   PopArg                                   -> 'this._getStructureValue(this.anything())',
 
   Rule       :name {this.rName = name;
@@ -178,7 +168,7 @@ let BSOMetaTranslator = ometa {
   intPart  = [:mode transFn:part]          -> (mode.toProgramString()  + "," + part),
   jtCase   = [:x trans:e]                  -> [x.toProgramString(), e],
 
-  transJs  = BSSemActionTranslator.jstrans(this._storeVar),
+  transJs :locals = BSSemActionTranslator.jstrans(this._storeVar, locals),
 
   trans    = [:t apply(t):ans]             -> ans,
   transFn  = trans:x                       -> x
