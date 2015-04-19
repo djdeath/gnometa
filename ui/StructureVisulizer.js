@@ -15,6 +15,7 @@ let loadFile = function(path) {
   return '' + source;
 };
 
+// Source mapping
 const OMetaMap = JSON.parse(loadFile('standalone.js.map'));
 
 let _ometaFiles = {};
@@ -29,6 +30,41 @@ let ometaLabel = function(id) {
   let sitem = OMetaMap.map[id];
   return ometaCode(OMetaMap.filenames[sitem[0]], sitem[1], sitem[2]);
 };
+
+// Structure searching
+let _structure = null;
+let findMatchingStructureChild = function(parent, offset) {
+  for (let i = 0; i < parent.children.length; i++) {
+    let child = parent.children[i];
+    if (child.start.idx <= offset && child.stop.idx >= offset)
+      return child;
+  }
+  return null;
+};
+let getMatchStructure = function(offset) {
+  let matches = [], child = _structure;
+  let iter = 0;
+  do {
+    matches.unshift(child);
+    child = findMatchingStructureChild(child, offset);
+    iter++;
+  } while (child);
+  return matches;
+};
+
+let bestStructureMatch = function(matches) {
+  for (let i = 0; i < matches.length; i++)
+    if (matches[i].stop.idx - matches[i].start.idx >= 2)
+      return [i, matches[i]];
+  return [matches.length - 1, matches[matches.length - 1]];
+};
+
+//
+let _inControl = false;
+let _inControlCallbacks = [];
+let setInControl = function(value) { _inControl = value; _inControlCallbacks.forEach(function(c) { c.call(_inControl); }); };
+let getInControl = function() { return _inControl; };
+let onInControlChanged = function(callback) { _inControlCallbacks.push(callback); };
 
 //
 Gtk.init(null, null);
@@ -86,34 +122,6 @@ scrolled.add(structview.getWidget());
 paned.add2(scrolled);
 
 //
-let _structure = null;
-let findMatchingStructureChild = function(parent, offset) {
-  for (let i = 0; i < parent.children.length; i++) {
-    let child = parent.children[i];
-    if (child.start.idx <= offset && child.stop.idx >= offset)
-      return child;
-  }
-  return null;
-};
-let getMatchStructure = function(offset) {
-  let matches = [], child = _structure;
-  let iter = 0;
-  do {
-    matches.unshift(child);
-    child = findMatchingStructureChild(child, offset);
-    iter++;
-  } while (child);
-  return matches;
-};
-
-let bestStructureMatch = function(matches) {
-  for (let i = 0; i < matches.length; i++)
-    if (matches[i].stop.idx - matches[i].start.idx >= 2)
-      return [i, matches[i]];
-  return [matches.length - 1, matches[matches.length - 1]];
-};
-
-//
 textview.onChange(function(text) {
   OMeta.BSOMetaJSParser.matchAll(text, "topLevel", undefined, function(err, tree, value) {
     if (err) {
@@ -150,8 +158,10 @@ let positionPopover = function(popover, parent, x, y) {
   popover.pointing_to = rect;
 };
 
+onInControlChanged(function(value) { if (!value && !popover.visible) textview.hightlightRange(0, 0); });
+popover.connect('hide', function() { textview.hightlightRange(0, 0); });
 textview.getWidget().connect('button-release-event', function(widget, event) {
-  if ((event.get_state()[1] & Gdk.ModifierType.CONTROL_MASK) == 0)
+  if (!getInControl())
     return false;
   if (!_structure)
     return false;
@@ -172,7 +182,7 @@ textview.getWidget().connect('button-release-event', function(widget, event) {
   return true;
 }.bind(this));
 textview.getWidget().connect('button-release-event', function(widget, event) {
-  if ((event.get_state()[1] & Gdk.ModifierType.CONTROL_MASK) == 0)
+  if (!getInControl())
     popover.hide();
   return false;
 }.bind(this));
@@ -186,14 +196,23 @@ popoverview.onChange(function(value) {
 }.bind(this));
 
 
-
 //
 let source = loadFile(ARGV[0]);
 textview.setData(source);
 
 //
 let win = new Gtk.Window();
-win.connect('destroy', (function() { Gtk.main_quit(); }).bind(this));
+win.connect('destroy', (function() { popover.hide(); Gtk.main_quit(); }).bind(this));
+win.connect('key-press-event', function(widget, event) {
+  if (event.get_keyval()[1] == Gdk.KEY_Control_L)
+    setInControl(true);
+  return false;
+});
+win.connect('key-release-event', function(widget, event) {
+  if (event.get_keyval()[1] == Gdk.KEY_Control_L)
+    setInControl(false);
+  return false;
+});
 
 win.resize(800, 400);
 paned.position = 800 / 2;
