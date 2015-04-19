@@ -299,6 +299,9 @@ let OMeta = {
     structure.children.push(child);
     return (structure.value = child.value);
   },
+  _getStructureValue: function(structure) {
+    return structure.value;
+  },
   _endStructure: function(structure) {
     structure.stop = this.input;
     return structure;

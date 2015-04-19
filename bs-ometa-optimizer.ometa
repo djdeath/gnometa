@@ -26,6 +26,7 @@ let BSNullOptimization = ometa {
 
   Js         :code                         -> ['Js', code],
   Location                                 -> ['Location'],
+  PopArg                                   -> ['PopArg'],
 
   Rule       :name :location trans:body    -> ['Rule', name, location, body]
 };
@@ -135,6 +136,7 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
 
   Js         :code                                        -> ['Js', code],
   Location                                                -> ['Location'],
+  PopArg                                                  -> ['PopArg'],
 
   Rule       :name :location
              ( somethingThatCanPass:b

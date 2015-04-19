@@ -85,7 +85,7 @@ let BSOMetaParser = ometa(BaseStrParser) {
                  | empty                                               -> x,
   optBind :x     = ':' name:n                                          -> { this.locals[n] = true; [#Set, n, x] }
                  | empty                                               -> x,
-  expr3          = ":" name:n                                          -> { this.locals[n] = true; [#Set, n, [#App, #anything]] }
+  expr3          = ":" name:n                                          -> { this.locals[n] = true; [#Set, n, [#PopArg]] }
                  | (expr2:x optIter(x) | semAction):e optBind(e)
                  | semPred,
   expr2          = "~" expr2:x                                         -> [#Not,       x]
@@ -162,6 +162,7 @@ let BSOMetaTranslator = ometa {
   Parenthesis     transFn:x                -> ['(', x, ')']                                                              .join(''),
   Store           transFn:x                -> ['this._appendStructure($r', this._storeVar, ',', x, ')']                  .join(''),
   Js              transJs,
+  PopArg                                   -> 'this._getStructureValue(this.anything())',
 
   Rule       :name {this.rName = name;
                     this._storeVar = 0; }
