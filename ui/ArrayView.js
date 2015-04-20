@@ -72,6 +72,10 @@ ArrayView.prototype = {
     return this._widget;
   },
 
+  showAll: function() {
+    this._widget.expand_all();
+  },
+
   _insertBefore: function(parent, sibling) {
     let ret = { iter: null, path: null };
     ret.iter = this._store.insert_before(parent.iter, sibling);
@@ -129,9 +133,9 @@ ArrayView.prototype = {
   },
 
   setData: function(data) {
-    if (!(data instanceof Array) &&
-        !(data instanceof Object))
-      throw new Error('Cannot display an object other than an array or object');
+    // if (!(data instanceof Array) &&
+    //     !(data instanceof Object))
+    //   throw new Error('Cannot display an object other than an array or object');
     this._data = data;
     this._refreshView();
   },
