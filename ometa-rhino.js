@@ -40,26 +40,6 @@ const CmdOptions = [
   },
 ];
 
-// Source map helpers
-
-let _sourceMap = {
-  filenames: [],
-  map: [],
-};
-let startFileSourceMap = function(filename) {
-  _sourceMap.filenames.push(filename);
-};
-
-let addToSourseMap = function(id, start, stop) {
-  _sourceMap.map[id] = [ _sourceMap.filenames.length - 1, start, stop ];
-};
-
-let createSourceMapId = function() {
-  return _sourceMap.map.length;
-};
-
-let getSourceMap = function() { return _sourceMap; };
-
 // File helpers
 
 let loadFile = function(path) {
