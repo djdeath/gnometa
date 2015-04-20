@@ -179,13 +179,6 @@ String.prototype.toProgramString = function() {
   return ws.contents();
 };
 
-// C-style tempnam function
-
-let tempnam = function(s) {
-  return (s ? s : "_tmpnam_") + tempnam.n++;
-};
-tempnam.n = 0;
-
 // unique tags for objects (useful for making "hash tables")
 
 let getTag = (function() {
