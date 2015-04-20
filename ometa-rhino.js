@@ -112,18 +112,17 @@ let start = function() {
 
   let ometaSource = null;
   try {
-    print('// This file was generated using Gnometa\n' +
-          '// https://github.com/djdeath/gnometa\n');
+    let ret = ('// This file was generated using Gnometa\n' +
+               '// https://github.com/djdeath/gnometa\n');
     if (config.options.base)
-      print(loadFile('./ometa-runtime.js'));
-    let ret = "";
+      ret += loadFile('./ometa-runtime.js') + '\n';
     for (let i = 0; i < config.arguments.length; i++) {
       let filename = config.arguments[i];
       startFileSourceMap(filename);
       ometaSource = loadFile(filename);
       ret += translateCode(ometaSource,
                            BSOMetaJSParser,
-                           config.options.ast ? null : BSOMetaJSTranslator) + "\n";
+                           config.options.ast ? null : BSOMetaJSTranslator) + '\n';
     }
     if (config.options.output)
       saveFile(config.options.output, ret);

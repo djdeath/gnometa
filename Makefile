@@ -28,7 +28,7 @@ OMETA = $(OO) echo " GEN " $@;
 gen: $(OMETA_STEP_GEN)
 
 ui/standalone.js: $(OMETA_SOURCES) $(OMETA_RUNTIME)
-	$(OO) $(OMETA) ./gnometa -b $(OMETA_SOURCES) -s $@.map > $@
+	$(OO) $(OMETA) ./gnometa -b $(OMETA_SOURCES) -s $@.map -o $@
 
 standalone: ui/standalone.js
 
