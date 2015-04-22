@@ -18,6 +18,7 @@ O = @
 OO = $(O$(V))
 
 OMETA = $(OO) echo " GEN " $@;
+GCR = $(OO) echo " GLIB_COMPILE_RESOURCES " $@;
 
 %.js.new: %.ometa
 	$(OMETA) ./gnometa $< > $@
@@ -31,6 +32,11 @@ ui/standalone.js: $(OMETA_SOURCES) $(OMETA_RUNTIME)
 	$(OO) $(OMETA) ./gnometa -b $(OMETA_SOURCES) -s $@.map -o $@
 
 standalone: ui/standalone.js
+
+ui/org.gnome.Gnometa.gresource: ui/org.gnome.Gnometa.gresource.xml ui/*.ui
+	$(OO) $(GCR) glib-compile-resources --sourcedir=ui ui/org.gnome.Gnometa.gresource.xml
+
+ui: standalone ui/org.gnome.Gnometa.gresource
 
 commit: $(OMETA_GEN)
 

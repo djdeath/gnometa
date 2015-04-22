@@ -230,9 +230,11 @@ popoverview.onChange(function(value) {
 let source = loadFile(ARGV[0]);
 textview.setData(source);
 
+Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
+const OutputView = imports.OutputView;
+
 //
-let builder = new Gtk.Builder();
-builder.add_from_file('gnometa-ui.ui');
+let builder = Gtk.Builder.new_from_resource('/org/gnome/Gnometa/ui.ui');
 let widget = function(name) { return builder.get_object(name); };
 
 let win = widget('main-window');
@@ -243,7 +245,7 @@ win.connect('key-press-event', function(widget, event) {
   switch (keyval) {
   case Gdk.KEY_Control_L: setInControl(true); break;
   case Gdk.KEY_F5: paned.removeLastWidget(); break;
-  case Gdk.KEY_F6: paned.addWidget(new Gtk.Label({ label: 'Yeah!' })); break;
+  case Gdk.KEY_F6: paned.addWidget(new OutputView.OutputView()); break;
   case Gdk.KEY_F7: paned.shrinkFocusedChild(10); break;
   case Gdk.KEY_F8: paned.growFocusedChild(10); break;
   }
