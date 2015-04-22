@@ -34,8 +34,8 @@ let BSOMetaParser = ometa(BaseStrParser) {
   keyword :xs    = token(xs) ~letterOrDigit                            -> xs,
   args           = '(' listOf(#hostExpr, ','):xs ")"                   -> xs
                  | empty                                               -> [],
-  application    = "^"          name:rule args:as                      -> [#App, "super", jsValue(#string, rule)].concat(as)
-                 | name:grm "." name:rule args:as                      -> [#App, "foreign",
+  application    = "^"          name:rule args:as                      -> [#App, #super, jsValue(#string, rule)].concat(as)
+                 | name:grm "." name:rule args:as                      -> [#App, #foreign,
                                                                            jsCode(this.locals, [#get, grm]),
                                                                            jsValue(#string, rule)].concat(as)
                  |              name:rule args:as                      -> [#App, rule].concat(as),
