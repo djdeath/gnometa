@@ -3,11 +3,13 @@ const Gio = imports.gi.Gio;
 const Gdk = imports.gi.Gdk;
 const Gtk = imports.gi.Gtk;
 
+Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
+
 const ArrayView = imports.ArrayView;
+const OutputView = imports.OutputView;
 const SplitView = imports.SplitView;
 const TextView = imports.TextView;
 const OMeta = imports.standalone;
-const Structure = imports.StructureMapper;
 
 //
 let loadFile = function(path) {
@@ -61,24 +63,18 @@ let bestStructureMatch = function(matches) {
 };
 
 //
-let _inControl = { value: false, callbacks: [], };
-let setInControl = function(value) { _inControl.value = value; _inControl.callbacks.forEach(function(c) { c.call(_inControl.value); }); };
-let getInControl = function() { return _inControl.value; };
-let onInControlChanged = function(callback) { _inControl.callbacks.push(callback); };
-
-//
 Gtk.init(null, null);
 
 let paned = new SplitView.SplitView();
 
 let scrolled = new Gtk.ScrolledWindow();
 let textview = new TextView.TextView();
-scrolled.add(textview.getWidget());
+scrolled.add(textview);
 paned.addWidget(scrolled);
 
 let popover = new Gtk.Popover({
   position: Gtk.PositionType.BOTTOM,
-  relative_to: textview.getWidget(),
+  relative_to: textview,
 });
 popover.set_size_request(350, 200);
 scrolled = new Gtk.ScrolledWindow();
@@ -100,45 +96,8 @@ popoverview.setDataController({
 scrolled.add(popoverview.getWidget());
 popover.add(scrolled);
 
-
-scrolled = new Gtk.ScrolledWindow();
-let structview = new ArrayView.ArrayView();
-structview.setDataController(// {
-//   getModel: function() {
-//     return [{ type: GObject.TYPE_STRING, renderer: 'text' },
-//             { type: GObject.TYPE_INT, renderer: 'text' },
-//             { type: GObject.TYPE_INT, renderer: 'text' } ];
-//   },
-//   render: function(parent, data) {
-//     let iter = this.insertBefore(parent, null);
-//     this.set(iter, data, [data.id >= 0 ? ometaLabel(data.id) : "",
-//                           data.start.idx, data.stop.idx]);
-//     for (let i = 0; i < data.children.length; i++)
-//       this.render(iter, data.children[i]);
-//   },
-// }
-  {
-    getModel: function() {
-      return [{ type: GObject.TYPE_STRING, renderer: 'text' }];
-    },
-    render: function(parent, data) {
-      if (typeof data != 'object') {
-        let iter = this.insertBefore(parent, null);
-        this.set(iter, data, ['' + data]);
-        return;
-      }
-      for (let i = 0; i < data.length; i++) {
-        let iter = this.insertBefore(parent, null);
-        if (typeof data != 'object')
-          this.set(iter, data, ['' + data]);
-        else
-          this.render(iter, data[i]);
-      }
-    },
-  });
-
-scrolled.add(structview.getWidget());
-paned.addWidget(scrolled);
+let structview = new OutputView.OutputView();
+paned.addWidget(structview);
 
 //
 textview.onChange(function(text) {
@@ -153,41 +112,25 @@ textview.onChange(function(text) {
   });
 }.bind(this));
 
-textview.getWidget().connect('motion-notify-event', function(widget, event) {
-  if ((event.get_state()[1] & Gdk.ModifierType.CONTROL_MASK) == 0)
-    return false;
-  if (!_structure)
-    return false;
-
-  let [, x, y] = event.get_coords();
-  let offset = textview.getOffsetAtLocation(x, y),
-      matches = getMatchStructure(offset),
+textview.connect('offset-changed', function(widget, offset) {
+  let matches = getMatchStructure(offset),
       [idx, match] = bestStructureMatch(matches);
   textview.hightlightRange(match.start.idx, match.stop.idx);
-  //log('offset=' + offset + ' match=' + match.title + ' range=' + match.start + ',' + match.stop);
-
-  return false;
 }.bind(this));
 
 let positionPopover = function(popover, parent, x, y) {
   let allocation = parent.get_allocation();
   let rect = popover.pointing_to;
-  rect.x = x + allocation.x - parent.hadjustment.value;
-  rect.y = y + allocation.y - parent.vadjustment.value;
+  rect.x = x;
+  rect.y = y;
   popover.pointing_to = rect;
 };
 
-onInControlChanged(function(value) { if (!value && !popover.visible) textview.hightlightRange(0, 0); });
-popover.connect('hide', function() { textview.hightlightRange(0, 0); });
-textview.getWidget().connect('button-release-event', function(widget, event) {
-  if (!getInControl())
-    return false;
+textview.connect('clicked', function(widget, offset, point) {
   if (!_structure)
     return false;
 
-  let [, x, y] = event.get_coords();
-  let offset = textview.getOffsetAtLocation(x, y),
-      matches = getMatchStructure(offset),
+  let matches = getMatchStructure(offset),
       [idx, match] = bestStructureMatch(matches);
   textview.hightlightRange(match.start.idx, match.stop.idx);
 
@@ -199,39 +142,22 @@ textview.getWidget().connect('button-release-event', function(widget, event) {
   popover.show_all();
 
   structview.setData(match.value);
-  structview.showAll();
-
-  return true;
+  //structview.showAll();
 }.bind(this));
-textview.getWidget().connect('button-release-event', function(widget, event) {
-  if (!getInControl())
-    popover.hide();
-  return false;
-}.bind(this));
+textview.connect('control-stopped', function() { if (!popover.visible) textview.hightlightRange(0, 0); });
+popover.connect('hide', function() { textview.hightlightRange(0, 0); });
 
 //
 popoverview.onChange(function(value) {
   textview.hightlightRange(value.start.idx, value.stop.idx);
 
   structview.setData(value.value);
-  structview.showAll();
+  //structview.showAll();
 });
-
-//
-// structview.onChange(function(value) {
-//   textview.hightlightRange(value.start.idx, value.stop.idx);
-// }.bind(this));
-// popoverview.onChange(function(value) {
-//   textview.hightlightRange(value.start.idx, value.stop.idx);
-// }.bind(this));
-
 
 //
 let source = loadFile(ARGV[0]);
 textview.setData(source);
-
-Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
-const OutputView = imports.OutputView;
 
 //
 let builder = Gtk.Builder.new_from_resource('/org/gnome/Gnometa/ui.ui');
@@ -243,7 +169,6 @@ widget('close-button').connect('clicked', (function() { win.hide(); popover.hide
 win.connect('key-press-event', function(widget, event) {
   let keyval = event.get_keyval()[1];
   switch (keyval) {
-  case Gdk.KEY_Control_L: setInControl(true); break;
   case Gdk.KEY_F5: paned.removeLastWidget(); break;
   case Gdk.KEY_F6: paned.addWidget(new OutputView.OutputView()); break;
   case Gdk.KEY_F7: paned.shrinkFocusedChild(10); break;
@@ -251,16 +176,9 @@ win.connect('key-press-event', function(widget, event) {
   }
   return false;
 });
-win.connect('key-release-event', function(widget, event) {
-  let keyval = event.get_keyval()[1];
-  switch (keyval) {
-  case Gdk.KEY_Control_L: setInControl(false); break;
-  }
-  return false;
-});
 
 win.resize(800, 400);
 win.add(paned);
-win.show_all();
+win.show();
 
 Gtk.main();

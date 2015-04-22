@@ -2,8 +2,8 @@
 <!-- Generated with glade 3.18.3 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
+  <requires lib="" version="3.12"/>
   <requires lib="gtksourceview" version="3.0"/>
-  <object class="GtkTextBuffer" id="source-buffer"/>
   <template class="Gjs_OutputView" parent="GtkBox">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -74,9 +74,10 @@
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
-          <object class="GtkViewport" id="treeview-viewport">
+          <object class="GtkScrolledWindow" id="treeview-viewport">
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
+            <property name="can_focus">True</property>
+            <property name="shadow_type">in</property>
             <child>
               <placeholder/>
             </child>
@@ -88,8 +89,9 @@
           </packing>
         </child>
         <child>
-          <object class="GtkViewport" id="viewport2">
-            <property name="can_focus">False</property>
+          <object class="GtkScrolledWindow" id="scrolledwindow1">
+            <property name="can_focus">True</property>
+            <property name="shadow_type">in</property>
             <child>
               <object class="GtkSourceView" id="sourceview">
                 <property name="visible">True</property>
@@ -97,7 +99,6 @@
                 <property name="wrap_mode">word-char</property>
                 <property name="left_margin">2</property>
                 <property name="right_margin">2</property>
-                <property name="buffer">source-buffer</property>
                 <property name="input_purpose">digits</property>
                 <property name="show_line_numbers">True</property>
                 <property name="right_margin_position">79</property>
@@ -119,4 +120,5 @@
       </packing>
     </child>
   </template>
+  <object class="GtkTextBuffer" id="source-buffer"/>
 </interface>

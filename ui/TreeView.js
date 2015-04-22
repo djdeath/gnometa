@@ -17,9 +17,9 @@ const TreeView = new Lang.Class({
   setDataController: function(controller) {
     this._controller = controller;
 
-    let columns = this._widget.get_columns();
+    let columns = this.get_columns();
     for (let i = 0; i < columns.length; i++)
-      this._widget.remove_column(columns[i]);
+      this.remove_column(columns[i]);
 
     let model = this._controller.getModel();
     let types = model.map(function(el) { return el.type; });
@@ -29,7 +29,7 @@ const TreeView = new Lang.Class({
     this._controller.set = this._set.bind(this);
 
     this._store.set_column_types(types);
-    this._widget.model = this._store;
+    this.model = this._store;
 
     let createColumn = function(rendererType, property, columnId) {
       let column = new Gtk.TreeViewColumn({});
@@ -48,7 +48,7 @@ const TreeView = new Lang.Class({
 
     for (let i = 0; i < model.length; i++) {
       let renderer = getRenderer(model[i].renderer)
-      this._widget.append_column(createColumn(renderer.renderer,
+      this.append_column(createColumn(renderer.renderer,
                                               renderer.property,
                                               i));
     }

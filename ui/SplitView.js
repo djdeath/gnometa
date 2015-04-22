@@ -11,6 +11,7 @@ const SplitView = new Lang.Class({
     this._children = [];
     this._allocations = [];
     this._inResize = false;
+    this.visible = true;
   },
 
   vfunc_get_preferred_height: function() {
