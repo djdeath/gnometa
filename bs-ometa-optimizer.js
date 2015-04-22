@@ -1,6 +1,5 @@
 // This file was generated using Gnometa
 // https://github.com/djdeath/gnometa
-
 let BSNullOptimization=objectThatDelegatesTo(OMeta,{
 "setHelped":function(){var $elf=this,$vars={},$r0=this._startStructure(0);$r0.value=(this["_didSomething"]=true);return this._endStructure($r0);},
 "helped":function(){var $elf=this,$vars={},$r0=this._startStructure(1);$r0.value=this._pred(this["_didSomething"]);return this._endStructure($r0);},

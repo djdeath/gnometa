@@ -1,6 +1,5 @@
 // This file was generated using Gnometa
 // https://github.com/djdeath/gnometa
-
 let GenericMatcher=objectThatDelegatesTo(OMeta,{
 "notLast":function(){var $elf=this,$vars={},$r0=this._startStructure(0);$vars.rule=this._getStructureValue(this.anything());$vars.r=this._appendStructure($r0,this._apply($vars.rule));this._appendStructure($r0,this._lookahead(function(){return this._apply($vars.rule);}));$r0.value=$vars.r;return this._endStructure($r0);}});let BaseStrParser=objectThatDelegatesTo(OMeta,{
 "string":function(){var $elf=this,$vars={},$r0=this._startStructure(1);$vars.r=this._appendStructure($r0,this.anything());this._pred(((typeof $vars.r) === "string"));$r0.value=$vars.r;return this._endStructure($r0);},

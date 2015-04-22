@@ -110,16 +110,17 @@ let BSJSParser = ometa(BaseStrParser) {
   funcRest     = "(" listOf(#formal, ','):fs ")" "{" srcElems:body "}"               -> [#func, fs, body],
   sc           = spacesNoNl ('\n' | &'}' | end)
                | ";",
+  varBinder    = "var" | "let" | "const",
   varBinding   = "name":n ( "=" expr
                           | empty -> [#get, 'undefined'] ):v                         -> [#assignVar, n, v],
   block        = "{" srcElems:ss "}"                                                 -> [#begin, ss],
   stmt         = block
-               | ("var" | "let" | "const"):decl listOf(#varBinding, ','):bs sc       -> [#beginVars, decl].concat(bs)
+               | varBinder:decl listOf(#varBinding, ','):bs sc                       -> [#beginVars, decl].concat(bs)
                | "if" "(" expr:c ")" stmt:t ( "else" stmt
                                             | empty -> [#get, 'undefined'] ):f       -> [#if, c, t, f]
                | "while" "(" expr:c ")" stmt:s                                       -> [#while,   c, s]
                | "do" stmt:s "while" "(" expr:c ")" sc                               -> [#doWhile, s, c]
-               | "for" "(" ( ("var" | "let" | "const"):decl listOf(#varBinding, ','):bs -> [#beginVars, decl].concat(bs)
+               | "for" "(" ( varBinder:decl listOf(#varBinding, ','):bs              -> [#beginVars, decl].concat(bs)
                            | expr
                            | empty -> [#get, 'undefined'] ):i
                        ";" ( expr
@@ -127,7 +128,7 @@ let BSJSParser = ometa(BaseStrParser) {
                        ";" ( expr
                            | empty -> [#get, 'undefined'] ):u
                        ")" stmt:s                                                    -> [#for, i, c, u, s]
-               | "for" "(" ( ("var" | "let" | "const"):decl "name":n -> [#beginVars, decl, [#noAssignVar, n]]
+               | "for" "(" ( varBinder:decl "name":n -> [#beginVars, decl, [#noAssignVar, n]]
                            | expr                                             ):v
                       "in" expr:e
                        ")" stmt:s                                                    -> [#forIn, v, e, s]

@@ -1,6 +1,5 @@
 // This file was generated using Gnometa
 // https://github.com/djdeath/gnometa
-
 let BSSemActionParser=objectThatDelegatesTo(BSJSParser,{
 "jsOmetaKeyword":function(){var $elf=this,$vars={},$r0=this._startStructure(0);$vars.k=this._getStructureValue(this.anything());this._appendStructure($r0,this._apply("spaces"));this._appendStructure($r0,this.exactly("@"));$vars.n=this._appendStructure($r0,this._apply("iName"));this._pred(($vars.k == $vars.n));$r0.value=$vars.k;return this._endStructure($r0);},
 "primExprHd":function(){var $elf=this,$vars={},$r0=this._startStructure(1);$r0.value=this._appendStructure($r0,this._or(function(){var $r1=this._startStructure(-1);this._appendStructure($r1,this._applyWithArgs("jsOmetaKeyword","location"));$r1.value=["Location"];return this._endStructure($r1);},function(){return BSJSParser._superApplyWithArgs(this,"primExprHd");}));return this._endStructure($r0);},
