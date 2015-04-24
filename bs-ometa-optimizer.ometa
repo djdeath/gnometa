@@ -87,13 +87,29 @@ let BSJumpTableOptimization = ometa(BSNullOptimization) {
   jtChoices :op = jtChoice:c {new JumpTable(op, c)}:jt (jtChoice:c {jt.add(c)})* setHelped -> jt.toTree()
 };
 
+let BSOrInliner = ometa(BSNullOptimization) {
+  Or       {[]}:xs {null}:xy
+           ( orCase:x {if(!xy){xs=x;xy=x;}else{xy.push(x);xy=x;}} )*
+           setHelped                                                        -> ['InlinedOr', xs],
+  orCase = trans:x                                                          -> ['Try', x, 'Catch'],
+
+  orSetCase :s = trans:x                                                    -> ['Try', ['And', x, s], 'Catch'],
+  orSet :s = 'Or'
+             {[]}:xs {null}:xy
+             ( orSetCase(s):x {if(!xy){xs=x;xy=x;}else{xy.push(x);xy=x;}} )*
+             setHelped                                                      -> ['InlinedOr', xs],
+  Set :n ( orSet(['SetCurrentValue', n]):v -> v
+         | trans:v                         -> ['Set', n, v] )
+};
+
 let BSFunctionOptimization = ometa(GenericMatcher) {
   optimize  = trans:x -> x,
 
   trans = [:t ?(this[t] != undefined) apply(t):ans] -> ans,
 
-  somethingThatReturns = [ exactly(#And) apply(#AndReturn):ans ] -> ans
+  somethingThatReturns = [ exactly(#And) andReturn:ans ]         -> ans
                        | [ exactly(#And) end ]                   -> ['ReturnStructure', ['And']]
+                       | [ exactly(#InlinedOr) apply(#InlinedOr):ans ] -> ans
                        | [ generatesStructure:t apply(t):ans ]   -> ['ReturnStructure', ['Store', ans]]
                        | [ exactly(#Set) apply(#Set):ans ]       -> ['ReturnStructure', ['Parenthesis', ans]]
                        | trans:x                                 -> ['ReturnStructure', x],
@@ -113,8 +129,8 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
   functioned = somethingThatCanPass:x                     -> ['Function', ['Return', x]]
              | storeSomethingThatReturns:x                -> ['FunctionStructure', x],
 
-  AndReturn  notLast(#storeSomething)*:xs
-             storeSomethingThatReturns:y                  -> ['And'].concat(xs.concat([y])),
+  andReturn = notLast(#storeSomething)*:xs
+              storeSomethingThatReturns:y                 -> ['And'].concat(xs.concat([y])),
 
   Or         functioned*:xs                               -> ['Or'].concat(xs),
   XOr        functioned*:xs                               -> ['XOr'].concat(xs),
@@ -134,6 +150,10 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
   Pred       :expr                                        -> ['Pred', expr],
   Set        :n storeSomething:v                          -> ['Set', n, v],
 
+  Try        trans:x 'Catch' trans:y                      -> ['Try', x, 'Catch', y],
+  tryReturn = [ exactly(#Try) w]
+  InlinedOrReturn tryReturn                               -> ['InlinedOr', x],
+
   Js         :locals :code                                -> ['Js', locals, code],
   Location                                                -> ['Location'],
   PopArg                                                  -> ['PopArg'],
@@ -152,6 +172,17 @@ let BSOMetaOptimizer = ometa {
                        ( BSAssociativeOptimization.optimize(r):r
                        | BSJumpTableOptimization.optimize(r):r )*
 
+  { log('-> or inliner'); }
+
+  ( BSOrInliner.optimize(r):r
+    | empty)
+
+  { log('<- or inliner'); }
+
                        BSFunctionOptimization.optimize(r):r
+
+  { log('<- funct optimizer'); }
+
+
     -> r
 };

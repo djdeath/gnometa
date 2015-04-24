@@ -139,6 +139,18 @@ let BSOMetaTranslator = ometa {
              { this._storeVar--; }         -> this.jumpTableCode(cases),
   Interleave intPart*:xs                   -> ['this._interleave(', xs.join(','), ')']                                   .join(''),
 
+  Try { this._storeVar++; }
+      transFn:x
+      { this._storeVar--; }
+      'Catch'
+      { this._exceptionVar++; }
+      ( transFn:y -> ['if($error', this._exceptionVar - 1, ' != fail) throw $error;', y].join('')
+      | end       -> ['throw ', this._exceptionVar - 1].join('')                                  ):z
+      { this._exceptionVar--; }            -> ['try{var $r', this._storeVar + 1, '=this._startStructure(-1);', x,
+                                               ';this._appendStructure($r', this._storeVar,
+                                               ',this._endStructure($r', this._storeVar + 1, '));',
+                                               '}catch($error', this._exceptionVar, '){', z, ';}']                       .join(''),
+
   Function { this._storeVar++; }
            transFn:x
            { this._storeVar--; }           -> ['function(){', x, ';}']                                                   .join(''),
@@ -155,7 +167,8 @@ let BSOMetaTranslator = ometa {
   PopArg                                   -> 'this._getStructureValue(this.anything())',
 
   Rule       :name {this.rName = name;
-                    this._storeVar = 0; }
+                    this._storeVar = 0;
+                    this._exceptionVar = 0; }
              :location !createSourceMapId():loc { addToSourseMap(loc, location.start.idx, location.stop.idx); }
              trans:body                    -> ['\n"', name, '":function(){var $elf=this,',
                                                '$vars={},',
