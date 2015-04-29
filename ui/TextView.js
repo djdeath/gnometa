@@ -39,7 +39,6 @@ const TextView = new Lang.Class({
     this.connect('key-press-event', this._keyPressed.bind(this));
     this.connect('key-release-event', this._keyReleased.bind(this));
     this.connect('button-release-event', this._buttonReleased.bind(this));
-    this.connect('key-release-event', this._keyReleased.bind(this));
     this.connect('motion-notify-event', this._motionNotified.bind(this));
   },
 
