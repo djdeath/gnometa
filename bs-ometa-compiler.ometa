@@ -98,7 +98,7 @@ BSOMetaParser.hexDigits = "0123456789abcdef";
 
 
 let BSSemActionTranslator = ometa(BSJSTranslator) {
-  Location                                 -> ['$r', this._storeVal].join(''),
+  Location                                 -> ['this._extractLocation($r', this._storeVal, ')'].join(''),
 
   get :n                                   -> this._renameVariable(n),
   name :n                                  -> this._renameVariable(n),
@@ -156,7 +156,7 @@ let BSOMetaTranslator = ometa {
 
   Rule       :name {this.rName = name;
                     this._storeVar = 0; }
-             :location !createSourceMapId():loc { addToSourseMap(loc, location.start.idx, location.stop.idx); }
+             :location !createSourceMapId():loc { addToSourseMap(loc, location.start, location.stop); }
              trans:body                    -> ['\n"', name, '":function(){var $elf=this,',
                                                '$vars={},',
                                                '$r0=this._startStructure(', loc, ');', body,

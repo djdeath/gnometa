@@ -299,6 +299,11 @@ let getSourceMap = function() { return _sourceMap; };
 // the OMeta "class" and basic functionality
 
 let OMeta = {
+  _extractLocation: function(retVal) {
+    return { input: retVal.start.lst,
+             start: retVal.start.idx,
+             stop: this.input.idx, };
+  },
   _startStructure: function(id) {
     return {
       id: id,
