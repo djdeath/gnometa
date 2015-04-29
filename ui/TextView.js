@@ -13,10 +13,11 @@ const TextView = new Lang.Class({
   Name: 'TextView',
   Extends: GtkSource.View,
   Signals: {
+    'clicked': { param_types: [ GObject.TYPE_ULONG ] },
     'control-started': {},
     'control-stopped': {},
     'offset-changed': { param_types: [ GObject.TYPE_ULONG ] },
-    'clicked': { param_types: [ GObject.TYPE_ULONG ] },
+    'selection-changed': { param_types: [ GObject.TYPE_ULONG, GObject.TYPE_ULONG ] },
   },
 
   _init: function() {
@@ -52,11 +53,15 @@ const TextView = new Lang.Class({
   },
 
   _buttonReleased: function(widget, event) {
-    if (!this._getInControl()) return false;
-    let [, x, y] = event.get_coords(),
-        offset = this.getOffsetAtLocation(x, y);
-    this._setInControl(false);
-    this.emit('clicked', offset);
+    if (this._getInControl()) {
+      let [, x, y] = event.get_coords(),
+          offset = this.getOffsetAtLocation(x, y);
+      this._setInControl(false);
+      this.emit('clicked', offset);
+    } else {
+      let [, start_iter, end_iter] = this.buffer.get_selection_bounds();
+      this.emit('selection-changed', start_iter.get_offset(), end_iter.get_offset());
+    }
     return false;
   },
   _keyPressed: function(widget, event) {
@@ -105,16 +110,17 @@ const TextView = new Lang.Class({
   hightlightRange: function(start, stop) {
     let start_iter, end_iter;
 
-    if (this._highlight) {
-      start_iter = this.buffer.get_iter_at_offset(this._highlight.start);
-      end_iter = this.buffer.get_iter_at_offset(this._highlight.stop);
-      this.buffer.remove_tag_by_name('highlight',
-                                      start_iter, end_iter);
-    }
+    // if (this._highlight) {
+    //   start_iter = this.buffer.get_iter_at_offset(this._highlight.start);
+    //   end_iter = this.buffer.get_iter_at_offset(this._highlight.stop);
+    //   this.buffer.remove_tag_by_name('highlight',
+    //                                   start_iter, end_iter);
+    // }
 
     start_iter = this.buffer.get_iter_at_offset(start);
     end_iter = this.buffer.get_iter_at_offset(stop);
-    this.buffer.apply_tag_by_name('highlight', start_iter, end_iter);
+    this.buffer.select_range(start_iter, end_iter);
+    //this.buffer.apply_tag_by_name('highlight', start_iter, end_iter);
 
     this._highlight = {
       start: start,

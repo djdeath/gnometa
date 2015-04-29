@@ -36,20 +36,20 @@ let ometaLabel = function(id) {
 
 // Structure searching
 let _structure = null;
-let findMatchingStructureChild = function(parent, offset) {
+let findMatchingStructureChild = function(parent, startOffset, endOffset) {
   for (let i = 0; i < parent.children.length; i++) {
     let child = parent.children[i];
-    if (child.start.idx <= offset && child.stop.idx >= offset)
+    if (child.start.idx <= startOffset && child.stop.idx >= endOffset)
       return child;
   }
   return null;
 };
-let getMatchStructure = function(offset) {
+let getMatchStructure = function(startOffset, endOffset) {
   let matches = [], child = _structure;
   let iter = 0;
   do {
     matches.unshift(child);
-    child = findMatchingStructureChild(child, offset);
+    child = findMatchingStructureChild(child, startOffset, endOffset);
     iter++;
   } while (child);
   return matches;
@@ -120,11 +120,16 @@ textview.onChange(function(text) {
 }.bind(this));
 
 textview.connect('offset-changed', function(widget, offset) {
-  let matches = getMatchStructure(offset),
+  let matches = getMatchStructure(offset, offset),
       [idx, match] = bestNamedStructureMatch(matches);
   textview.hightlightRange(match.start.idx, match.stop.idx);
   structview.setData(match.value);
 }.bind(this));
+textview.connect('selection-changed', function(widget, startOffset, endOffset) {
+  let matches = getMatchStructure(startOffset, endOffset);
+  textview.hightlightRange(matches[0].start.idx, matches[0].stop.idx);
+  structview.setData(matches[0].value);
+});
 
 let positionPopover = function(popover, parent, x, y) {
   let allocation = parent.get_allocation();
@@ -138,7 +143,7 @@ textview.connect('clicked', function(widget, offset, point) {
   if (!_structure)
     return false;
 
-  let matches = getMatchStructure(offset),
+  let matches = getMatchStructure(offset, offset),
       [idx, match] = bestStructureMatch(matches);
   textview.hightlightRange(match.start.idx, match.stop.idx);
 
@@ -150,10 +155,7 @@ textview.connect('clicked', function(widget, offset, point) {
   popover.show_all();
 
   structview.setData(match.value);
-  //structview.showAll();
 }.bind(this));
-textview.connect('control-stopped', function() { if (!popover.visible) textview.hightlightRange(0, 0); });
-popover.connect('hide', function() { textview.hightlightRange(0, 0); });
 
 //
 popoverview.onChange(function(value) {
