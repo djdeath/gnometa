@@ -7,6 +7,7 @@ Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
 
 const ArrayView = imports.ArrayView;
 const OutputView = imports.OutputView;
+const PopoverView = imports.PopoverView;
 const SplitView = imports.SplitView;
 const TextView = imports.TextView;
 const OMeta = imports.standalone;
@@ -31,7 +32,8 @@ let ometaCode = function(filename, start, stop) {
 
 let ometaLabel = function(id) {
   let sitem = OMetaMap.map[id];
-  return ometaCode(OMetaMap.filenames[sitem[0]], sitem[1], sitem[2]);
+  let filename = OMetaMap.filenames[sitem[0]];
+  return [filename, loadFile('../' + filename), sitem[1], sitem[2]];
 };
 
 // Structure searching
@@ -83,25 +85,9 @@ let popover = new Gtk.Popover({
   position: Gtk.PositionType.BOTTOM,
   relative_to: textview,
 });
-popover.set_size_request(350, 200);
-scrolled = new Gtk.ScrolledWindow();
-let popoverview = new ArrayView.ArrayView();
-popoverview.setDataController({
-  getModel: function() {
-    return [{ type: GObject.TYPE_STRING, renderer: 'text' }];
-  },
-  render: function(parent, data) {
-    for (let i = 0; i < data.length; i++) {
-      let item = data[i];
-      if (item.id >= 0) {
-        let iter = this.insertBefore(parent, null);
-        this.set(iter, item, [ometaLabel(item.id)]);
-      }
-    }
-  },
-});
-scrolled.add(popoverview.getWidget());
-popover.add(scrolled);
+popover.set_size_request(400, 400);
+let popoverview = new PopoverView.PopoverView();
+popover.add(popoverview);
 
 let structview = new OutputView.OutputView();
 paned.addWidget(structview);
@@ -144,25 +130,17 @@ textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
     return false;
 
   let matches = getMatchStructure(startOffset, endOffset),
-      [idx, match] = bestStructureMatch(matches);
+      [idx, match] = bestNamedStructureMatch(matches);
   textview.hightlightRange(match.start.idx, match.stop.idx);
 
   let rect = textview.getRectForRange(match.start.idx, match.stop.idx);
   positionPopover(popover, widget,
                   rect.x + rect.width / 2,
                   rect.y + rect.height);
-  popoverview.setData(matches);
+  popoverview.setData.apply(popoverview, ometaLabel(match.id));
   popover.show_all();
-
   structview.setData(match.value);
 }.bind(this));
-
-//
-popoverview.onChange(function(value) {
-  textview.hightlightRange(value.start.idx, value.stop.idx);
-
-  structview.setData(value.value);
-});
 
 //
 let source = loadFile(ARGV[0]);

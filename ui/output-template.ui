@@ -2,7 +2,6 @@
 <!-- Generated with glade 3.18.3 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
-  <requires lib="" version="3.12"/>
   <requires lib="gtksourceview" version="3.0"/>
   <template class="Gjs_OutputView" parent="GtkBox">
     <property name="visible">True</property>

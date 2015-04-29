@@ -4,5 +4,6 @@
     <file preprocess="xml-stripblanks">ui.ui</file>
     <file preprocess="xml-stripblanks">input-template.ui</file>
     <file preprocess="xml-stripblanks">output-template.ui</file>
+    <file preprocess="xml-stripblanks">popover-template.ui</file>
   </gresource>
 </gresources>

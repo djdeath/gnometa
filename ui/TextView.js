@@ -54,12 +54,7 @@ const TextView = new Lang.Class({
   },
 
   _buttonReleased: function(widget, event) {
-    if (this._getInControl()) {
-      let [, x, y] = event.get_coords(),
-          offset = this.getOffsetAtLocation(x, y);
-      this._setInControl(false);
-      this.emit('clicked', offset);
-    } else {
+    if (!this._getInControl()) {
       this._emitSignalOnSelection('selection-changed');
     }
     return false;
