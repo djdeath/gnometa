@@ -116,6 +116,7 @@ textview.connect('offset-changed', function(widget, offset) {
   let matches = getMatchStructure(offset),
       [idx, match] = bestStructureMatch(matches);
   textview.hightlightRange(match.start.idx, match.stop.idx);
+  structview.setData(match.value);
 }.bind(this));
 
 let positionPopover = function(popover, parent, x, y) {
