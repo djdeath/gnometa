@@ -152,7 +152,6 @@ popoverview.onChange(function(value) {
   textview.hightlightRange(value.start.idx, value.stop.idx);
 
   structview.setData(value.value);
-  //structview.showAll();
 });
 
 //

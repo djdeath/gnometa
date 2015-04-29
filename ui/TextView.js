@@ -56,7 +56,6 @@ const TextView = new Lang.Class({
     if (!this._getInControl()) return false;
     let [, x, y] = event.get_coords(),
         offset = this.getOffsetAtLocation(x, y);
-    log('->' + x + 'x' + y);
     this._setInControl(false);
     this.emit('clicked', offset);
     return false;
