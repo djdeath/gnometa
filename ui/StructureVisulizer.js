@@ -61,6 +61,13 @@ let bestStructureMatch = function(matches) {
       return [i, matches[i]];
   return [matches.length - 1, matches[matches.length - 1]];
 };
+let bestNamedStructureMatch = function(matches) {
+  for (let i = 0; i < matches.length; i++)
+    if (matches[i].id != -1 &&
+        (matches[i].stop.idx - matches[i].start.idx) >= 2)
+      return [i, matches[i]];
+  return [matches.length - 1, matches[matches.length - 1]];
+};
 
 //
 Gtk.init(null, null);
@@ -114,7 +121,7 @@ textview.onChange(function(text) {
 
 textview.connect('offset-changed', function(widget, offset) {
   let matches = getMatchStructure(offset),
-      [idx, match] = bestStructureMatch(matches);
+      [idx, match] = bestNamedStructureMatch(matches);
   textview.hightlightRange(match.start.idx, match.stop.idx);
   structview.setData(match.value);
 }.bind(this));
