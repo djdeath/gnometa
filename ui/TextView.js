@@ -13,6 +13,7 @@ const TextView = new Lang.Class({
   Name: 'TextView',
   Extends: GtkSource.View,
   Signals: {
+    'alternate-menu': { param_types: [ GObject.TYPE_ULONG, GObject.TYPE_ULONG ] },
     'clicked': { param_types: [ GObject.TYPE_ULONG ] },
     'control-started': {},
     'control-stopped': {},
@@ -59,8 +60,7 @@ const TextView = new Lang.Class({
       this._setInControl(false);
       this.emit('clicked', offset);
     } else {
-      let [, start_iter, end_iter] = this.buffer.get_selection_bounds();
-      this.emit('selection-changed', start_iter.get_offset(), end_iter.get_offset());
+      this._emitSignalOnSelection('selection-changed');
     }
     return false;
   },
@@ -68,6 +68,7 @@ const TextView = new Lang.Class({
     let keyval = event.get_keyval()[1];
     switch (keyval) {
     case Gdk.KEY_Control_L: this._setInControl(true); break;
+    case Gdk.KEY_Shift_L: case Gdk.KEY_Shift_R: this._emitSignalOnSelection('alternate-menu'); break;
     }
     return false;
   },
@@ -84,6 +85,14 @@ const TextView = new Lang.Class({
         offset = this.getOffsetAtLocation(x, y);
     this.emit('offset-changed', offset);
     return false;
+  },
+
+  _emitSignalOnSelection: function(signal) {
+    let [, start_iter, end_iter] = this.buffer.get_selection_bounds();
+    let startOffset = start_iter.get_offset(),
+        endOffset = end_iter.get_offset();
+    if (startOffset != endOffset)
+      this.emit(signal, startOffset, endOffset);
   },
 
   getOffsetAtLocation: function(x, y) {

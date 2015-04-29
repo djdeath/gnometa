@@ -139,11 +139,11 @@ let positionPopover = function(popover, parent, x, y) {
   popover.pointing_to = rect;
 };
 
-textview.connect('clicked', function(widget, offset, point) {
+textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
   if (!_structure)
     return false;
 
-  let matches = getMatchStructure(offset, offset),
+  let matches = getMatchStructure(startOffset, endOffset),
       [idx, match] = bestStructureMatch(matches);
   textview.hightlightRange(match.start.idx, match.stop.idx);
 
