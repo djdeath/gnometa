@@ -21,6 +21,7 @@ const TextView = new Lang.Class({
     this.parent();
     this.visible = true;
     this.show_line_numbers = true;
+    this.following_highlight = false;
 
     let lang_manager = GtkSource.LanguageManager.get_default();
     this.buffer.set_language(lang_manager.get_language('js'));
@@ -38,8 +39,8 @@ const TextView = new Lang.Class({
     this.connect('key-release-event', this._keyReleased.bind(this));
     this.connect('button-release-event', this._buttonReleased.bind(this));
     this.connect('motion-notify-event', this._motionNotified.bind(this));
+    this.connect('size-allocate', this._sizeAllocated.bind(this));
   },
-
 
   _setInControl: function(value) {
     this._inControl = value;
@@ -76,6 +77,19 @@ const TextView = new Lang.Class({
     return false;
   },
 
+  _sizeAllocated: function() {
+    if (this.following_highlight)
+      this._scrollToHighlight();
+    return false;
+  },
+
+  _scrollToHighlight: function() {
+    let rect1 = this.get_iter_location(this._iterAtOffset(this._highlight.start)),
+        rect2 = this.get_iter_location(this._iterAtOffset(this._highlight.end));
+    this.vadjustment.value =
+      (rect1.y + rect2.y) / 2 - this.vadjustment.page_increment / 2;
+  },
+
   _emitSignalOnSelection: function(signal) {
     let [, start_iter, end_iter] = this.buffer.get_selection_bounds();
     let startOffset = start_iter.get_offset(),
@@ -109,26 +123,33 @@ const TextView = new Lang.Class({
     return ret;
   },
 
+  _iterAtOffset: function(offset) {
+    return this.buffer.get_iter_at_offset(offset);
+  },
+  _highlightRange: function(start, end) {
+    this.buffer.apply_tag_by_name('highlight',
+                                  this._iterAtOffset(start),
+                                  this._iterAtOffset(end));
+  },
+  _unhighlightRange: function(start, end) {
+    this.buffer.remove_tag_by_name('highlight',
+                                   this._iterAtOffset(start),
+                                   this._iterAtOffset(end));
+  },
   hightlightRange: function(start, end) {
-    let start_iter, end_iter;
-
-    start_iter = this.buffer.get_iter_at_offset(0);
-    this.buffer.select_range(start_iter, start_iter);
-
-    if (this._highlight) {
-      start_iter = this.buffer.get_iter_at_offset(this._highlight.start);
-      end_iter = this.buffer.get_iter_at_offset(this._highlight.end);
-      this.buffer.remove_tag_by_name('highlight', start_iter, end_iter);
-    }
-
-    start_iter = this.buffer.get_iter_at_offset(start);
-    end_iter = this.buffer.get_iter_at_offset(end);
-    this.buffer.apply_tag_by_name('highlight', start_iter, end_iter);
-
+    if (this._highlight)
+      this._unhighlightRange(this._highlight.start, this._highlight.end);
     this._highlight = {
       start: start,
       end: end,
     };
+    this._highlightRange(this._highlight.start, this._highlight.end);
+    if (this.following_highlight)
+      this._scrollToHighlight();
+  },
+  removeSelection: function() {
+    let iter = this.buffer.get_iter_at_offset(0);
+    this.buffer.select_range(iter, iter);
   },
 
   setData: function(data) {

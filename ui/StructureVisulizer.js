@@ -128,6 +128,7 @@ textview.connect('selection-changed', function(widget, startOffset, endOffset) {
   _structureTree = getMatchStructure(startOffset, endOffset);
   _structureTreeIdx = 0;
   let match = _structureTree[_structureTreeIdx];
+  textview.removeSelection();
   textview.hightlightRange(match.start.idx, match.stop.idx);
   structview.setData(match.value);
 });
