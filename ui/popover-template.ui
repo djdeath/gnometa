@@ -25,7 +25,6 @@
           <object class="GtkLabel" id="filename-label">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="label" translatable="yes">label</property>
           </object>
           <packing>
             <property name="expand">True</property>
@@ -78,8 +77,6 @@
           <object class="GtkSourceView" id="sourceview">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="left_margin">2</property>
-            <property name="right_margin">2</property>
           </object>
         </child>
       </object>

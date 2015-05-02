@@ -39,7 +39,22 @@ const PopoverView = new Lang.Class({
     this._sourceview.buffer.set_language(lang_manager.get_language('js'));
   },
 
-  setData: function(filename, data, startOffset, endOffset) {
+  _iterAtOffset: function(offset) {
+    return this._sourceview.buffer.get_iter_at_offset(offset);
+  },
+
+  _highlightRegion: function(start, end) {
+    this._sourceview.buffer.apply_tag_by_name('highlight',
+                                              this._iterAtOffset(start),
+                                              this._iterAtOffset(end));
+  },
+  _unhighlightRegion: function(start, end) {
+    this._sourceview.buffer.remove_tag_by_name('highlight',
+                                               this._iterAtOffset(start),
+                                               this._iterAtOffset(end));
+  },
+
+  setData: function(filename, data, start, end) {
     let textChanged = false;
     if (filename != this._filename_label.label) {
       this._filename_label.label = filename;
@@ -47,22 +62,14 @@ const PopoverView = new Lang.Class({
       textChanged = true;
     }
 
-    let buffer = this._sourceview.buffer;
-    let start_iter, end_iter;
-    if (this._highlight) {
-      start_iter = buffer.get_iter_at_offset(this._highlight.startOffset);
-      end_iter = buffer.get_iter_at_offset(this._highlight.endOffset);
-      buffer.remove_tag_by_name('highlight', start_iter, end_iter);
-    }
-    start_iter = buffer.get_iter_at_offset(startOffset);
-    end_iter = buffer.get_iter_at_offset(endOffset);
-    buffer.apply_tag_by_name('highlight', start_iter, end_iter);
+    if (this._highlight)
+      this._unhighlightRegion(this._highlight.start, this._highlight.end);
     this._highlight = {
-      startOffset: startOffset,
-      endOffset: endOffset,
+      start: start,
+      end: end,
     };
+    this._highlightRegion(this._highlight.start, this._highlight.end);
 
-    this._startOffsetIter = start_iter;
     if (!textChanged)
       this._sizeAllocated();
   },
@@ -74,9 +81,10 @@ const PopoverView = new Lang.Class({
     this.emit('rule-move', -1);
   },
   _sizeAllocated: function() {
-    let rect = this._sourceview.get_iter_location(this._startOffsetIter);
+    let rect1 = this._sourceview.get_iter_location(this._iterAtOffset(this._highlight.start)),
+        rect2 = this._sourceview.get_iter_location(this._iterAtOffset(this._highlight.end));
     this._sourceview.vadjustment.value =
-      rect.y - this._sourceview.vadjustment.page_increment / 2;
+      (rect1.y + rect2.y) / 2 - this._sourceview.vadjustment.page_increment / 2;
     return false;
   },
 });
