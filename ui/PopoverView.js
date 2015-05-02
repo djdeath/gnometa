@@ -4,6 +4,10 @@ const GObject = imports.gi.GObject;
 const Gtk = imports.gi.Gtk;
 const GtkSource = imports.gi.GtkSource;
 
+let allocationBoxToString = function(box) {
+    return '' + box.width + 'x' + box.height + ' @ ' + box.x + 'x' + box.y;
+};
+
 const PopoverView = new Lang.Class({
   Name: 'PopoverView',
   Extends: Gtk.Box,
@@ -36,8 +40,12 @@ const PopoverView = new Lang.Class({
   },
 
   setData: function(filename, data, startOffset, endOffset) {
-    this._filename_label.set_label(filename);
-    this._sourceview.buffer.set_text(data, -1);
+    let textChanged = false;
+    if (filename != this._filename_label.label) {
+      this._filename_label.label = filename;
+      this._sourceview.buffer.set_text(data, -1);
+      textChanged = true;
+    }
 
     let buffer = this._sourceview.buffer;
     let start_iter, end_iter;
@@ -54,14 +62,9 @@ const PopoverView = new Lang.Class({
       endOffset: endOffset,
     };
 
-    // let rect = this._sourceview.get_iter_location(start_iter);
-    // let adj = this._sourceview.vadjustment;
-    // log('val=' + this._sourceview.vadjustment.value
-    //     + ' lower=' + this._sourceview.vadjustment.lower
-    //     + ' upper=' + this._sourceview.vadjustment.upper);
-    // this._sourceview.vadjustment.value = rect.x;
-    buffer.delete_mark_by_name('highlight');
-    this._markToScrollAt = buffer.create_mark('highlight', start_iter, false);
+    this._startOffsetIter = start_iter;
+    if (!textChanged)
+      this._sizeAllocated();
   },
 
   _plusPressed: function() {
@@ -71,8 +74,9 @@ const PopoverView = new Lang.Class({
     this.emit('rule-move', -1);
   },
   _sizeAllocated: function() {
-    if (this._markToScrollAt)
-      this._sourceview.scroll_to_mark(this._markToScrollAt, 0, true, 0.1, 0.5);
+    let rect = this._sourceview.get_iter_location(this._startOffsetIter);
+    this._sourceview.vadjustment.value =
+      rect.y - this._sourceview.vadjustment.page_increment / 2;
     return false;
   },
 });

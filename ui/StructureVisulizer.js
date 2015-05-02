@@ -71,6 +71,10 @@ let bestNamedStructureMatch = function(matches) {
   return [matches.length - 1, matches[matches.length - 1]];
 };
 
+// Structure tree
+let _structureTree = null;
+let _structureTreeIdx = -1;
+
 //
 Gtk.init(null, null);
 
@@ -88,6 +92,15 @@ let popover = new Gtk.Popover({
 popover.set_size_request(400, 400);
 let popoverview = new PopoverView.PopoverView();
 popover.add(popoverview);
+popoverview.connect('rule-move', function(widget, way) {
+  let i = _structureTreeIdx + way;
+  while (i >= 0 && i < _structureTree.length && _structureTree[i].id == -1) i += way;
+  if (i < 0 || i >= _structureTree.length || _structureTree[_structureTreeIdx].id == -1) return;
+  _structureTreeIdx = i;
+  let match = _structureTree[_structureTreeIdx];
+  popoverview.setData.apply(popoverview, ometaLabel(match.id));
+  textview.hightlightRange(match.start.idx, match.stop.idx);
+}.bind(this));
 
 let structview = new OutputView.OutputView();
 paned.addWidget(structview);
@@ -106,15 +119,17 @@ textview.onChange(function(text) {
 }.bind(this));
 
 textview.connect('offset-changed', function(widget, offset) {
-  let matches = getMatchStructure(offset, offset),
-      [idx, match] = bestNamedStructureMatch(matches);
+  _structureTree = getMatchStructure(offset, offset);
+  let  [idx, match] = bestNamedStructureMatch(_structureTree);
   textview.hightlightRange(match.start.idx, match.stop.idx);
   structview.setData(match.value);
 }.bind(this));
 textview.connect('selection-changed', function(widget, startOffset, endOffset) {
-  let matches = getMatchStructure(startOffset, endOffset);
-  textview.hightlightRange(matches[0].start.idx, matches[0].stop.idx);
-  structview.setData(matches[0].value);
+  _structureTree = getMatchStructure(startOffset, endOffset);
+  _structureTreeIdx = 0;
+  let match = _structureTree[_structureTreeIdx];
+  textview.hightlightRange(match.start.idx, match.stop.idx);
+  structview.setData(match.value);
 });
 
 let positionPopover = function(popover, parent, x, y) {
@@ -129,8 +144,9 @@ textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
   if (!_structure)
     return false;
 
-  let matches = getMatchStructure(startOffset, endOffset),
-      [idx, match] = bestNamedStructureMatch(matches);
+  _structureTree = getMatchStructure(startOffset, endOffset);
+  let [idx, match] = bestNamedStructureMatch(_structureTree);
+  _structureTreeIdx = idx;
   textview.hightlightRange(match.start.idx, match.stop.idx);
 
   let rect = textview.getRectForRange(match.start.idx, match.stop.idx);
@@ -138,7 +154,7 @@ textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
                   rect.x + rect.width / 2,
                   rect.y + rect.height);
   popoverview.setData.apply(popoverview, ometaLabel(match.id));
-  popover.show_all();
+  popover.show();
   structview.setData(match.value);
 }.bind(this));
 
