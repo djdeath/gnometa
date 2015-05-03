@@ -77,7 +77,7 @@ const TextView = new Lang.Class({
     return false;
   },
 
-  _sizeAllocated: function() {
+  _sizeAllocated: function(widget, alloc) {
     if (this.following_highlight)
       this._scrollToHighlight();
     return false;
@@ -115,12 +115,12 @@ const TextView = new Lang.Class({
 
     let rect1 = this.get_iter_location(start_iter),
         rect2 = this.get_iter_location(end_iter);
-    let ret =  Gdk.rectangle_union(rect1, rect2);
+    rect1.union(rect1, rect2);
     // GtkSourceView WTF?
-    ret.x += this.buffer_to_window_coords(Gtk.TextWindowType.WIDGET, 0, 0)[0] - 4;
-    ret.x += this.get_hadjustment().get_value();
-    ret.y += this.get_vadjustment().get_value();
-    return ret;
+    rect1.x += this.buffer_to_window_coords(Gtk.TextWindowType.WIDGET, 0, 0)[0] - 4;
+    rect1.x += this.get_hadjustment().get_value();
+    rect1.y += this.get_vadjustment().get_value();
+    return rect1;
   },
 
   _iterAtOffset: function(offset) {
