@@ -26,7 +26,7 @@ const OutputView = new Lang.Class({
         return [{ type: GObject.TYPE_STRING, renderer: 'text' }];
       },
       render: function(parent, data) {
-        if (typeof data != 'object') {
+        if (typeof data != 'object' || data === null || data === undefined) {
           let iter = this.insertBefore(parent, null);
           this.set(iter, data, ['' + data]);
           return;
