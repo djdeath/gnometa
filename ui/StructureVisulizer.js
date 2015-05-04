@@ -134,11 +134,8 @@ textview.connect('selection-changed', function(widget, startOffset, endOffset) {
   structview.setData(match.value);
 });
 
-let positionPopover = function(popover, parent, x, y) {
+let positionPopover = function(popover, parent, rect) {
   let allocation = parent.get_allocation();
-  let rect = popover.pointing_to;
-  rect.x = x;
-  rect.y = y;
   popover.pointing_to = rect;
 };
 
@@ -152,9 +149,7 @@ textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
   textview.hightlightRange(match.start.idx, match.stop.idx);
 
   let rect = textview.getRectForRange(match.start.idx, match.stop.idx);
-  positionPopover(popover, widget,
-                  rect.x + rect.width / 2,
-                  rect.y + rect.height);
+  positionPopover(popover, widget, rect);
   popoverview.setData.apply(popoverview, ometaLabel(match.id));
   popover.show();
   structview.setData(match.value);

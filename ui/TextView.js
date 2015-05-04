@@ -115,7 +115,7 @@ const TextView = new Lang.Class({
 
     let rect1 = this.get_iter_location(start_iter),
         rect2 = this.get_iter_location(end_iter);
-    rect1.union(rect1, rect2);
+    rect1 = rect1.union(rect2);
     // GtkSourceView WTF?
     rect1.x += this.buffer_to_window_coords(Gtk.TextWindowType.WIDGET, 0, 0)[0] - 4;
     rect1.x -= this.hadjustment.value;
