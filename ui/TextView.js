@@ -22,6 +22,7 @@ const TextView = new Lang.Class({
     this.visible = true;
     this.show_line_numbers = true;
     this.following_highlight = false;
+    this._highlight = { start: 0, end: 0 };
 
     let lang_manager = GtkSource.LanguageManager.get_default();
     this.buffer.set_language(lang_manager.get_language('js'));
@@ -99,7 +100,8 @@ const TextView = new Lang.Class({
   },
 
   _emitSignalOnMenu: function(signal) {
-    this.emit(signal, this._highlight.start, this._highlight.end);
+    if (this._highlight.start != this._highlight.end)
+      this.emit(signal, this._highlight.start, this._highlight.end);
   },
 
   getOffsetAtLocation: function(x, y) {
