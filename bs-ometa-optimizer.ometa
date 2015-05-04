@@ -4,53 +4,64 @@
 let BSNullOptimization = ometa {
   setHelped = !(this._didSomething = true),
   helped    = ?this._didSomething,
-  trans     = [:t ?(this[t] != undefined) apply(t):ans] -> ans,
-  optimize  = trans:x helped                         -> x,
 
-  App        :rule anything*:args          -> ['App', rule].concat(args),
-  Pred       :expr                         -> ['Pred', expr],
-  Or         trans*:xs                     -> ['Or'].concat(xs),
-  XOr        trans*:xs                     -> ['XOr'].concat(xs),
-  And        trans*:xs                     -> ['And'].concat(xs),
-  Opt        trans:x                       -> ['Opt',  x],
-  Many       trans:x                       -> ['Many',  x],
-  Many1      trans:x                       -> ['Many1', x],
-  Set        :n trans:v                    -> ['Set', n, v],
-  Not        trans:x                       -> ['Not',       x],
-  Lookahead  trans:x                       -> ['Lookahead', x],
-  Form       trans:x                       -> ['Form',      x],
-  ConsBy     trans:x                       -> ['ConsBy',    x],
-  IdxConsBy  trans:x                       -> ['IdxConsBy', x],
-  JumpTable  ([:c trans:e] -> [c, e])*:ces -> ['JumpTable'].concat(ces),
-  Interleave ([:m trans:p] -> [m, p])*:xs  -> ['Interleave'].concat(xs),
+  pushLocation :loc = !(this._locations.push(loc)),
+  popLocation = !(this._locations.pop()),
+
+  trans     = [:loc :t ?(this[t] != undefined)
+               pushLocation(loc)
+               apply(t):ans
+               popLocation]                -> [loc].concat(ans),
+  optimize  = trans:x helped               -> x,
+
+  App        :rule anything*:args          -> ['App',        rule].concat(args),
+  Pred       :expr                         -> ['Pred',       expr],
+  Or         trans*:xs                     -> ['Or',             ].concat(xs),
+  XOr        trans*:xs                     -> ['XOr',            ].concat(xs),
+  And        trans*:xs                     -> ['And',            ].concat(xs),
+  Opt        trans:x                       -> ['Opt',        x   ],
+  Many       trans:x                       -> ['Many',       x   ],
+  Many1      trans:x                       -> ['Many1',      x   ],
+  Set        :n trans:v                    -> ['Set',        n, v],
+  Not        trans:x                       -> ['Not',        x   ],
+  Lookahead  trans:x                       -> ['Lookahead',  x   ],
+  Form       trans:x                       -> ['Form',       x   ],
+  ConsBy     trans:x                       -> ['ConsBy',     x   ],
+  IdxConsBy  trans:x                       -> ['IdxConsBy',  x   ],
+  JumpTable  ([:c trans:e] -> [c, e])*:ces -> ['JumpTable'       ].concat(ces),
+  Interleave ([:m trans:p] -> [m, p])*:xs  -> ['Interleave'      ].concat(xs),
 
   Js         :locals :code                 -> ['Js', locals, code],
-  Location                                 -> ['Location'],
-  PopArg                                   -> ['PopArg'],
+  Location                                 -> ['Location'        ],
+  PopArg                                   -> ['PopArg'          ],
 
-  Rule       :name :location trans:body    -> ['Rule', name, location, body]
+  Rule       :name trans:body              -> ['Rule', name, body]
 };
-BSNullOptimization.initialize = function() { this._didSomething = false; };
+BSNullOptimization.initialize = function() {
+  this._didSomething = false;
+  this._locations = [];
+};
+BSNullOptimization.location = function() { return this._locations[this._locations.length - 1]; }
 
 let BSAssociativeOptimization = ometa(BSNullOptimization) {
-  And trans:x end           setHelped -> x,
+  And trans:x end           setHelped -> x.slice(1),
   And transInside('And'):xs           -> ['And'].concat(xs),
-  Or  trans:x end           setHelped -> x,
+  Or  trans:x end           setHelped -> x.slice(1),
   Or  transInside('Or'):xs            -> ['Or'].concat(xs),
-  XOr trans:x end           setHelped -> x,
+  XOr trans:x end           setHelped -> x.slice(1),
   XOr transInside('XOr'):xs           -> ['XOr'].concat(xs),
 
-  transInside :t = [exactly(t) transInside(t):xs] transInside(t):ys setHelped -> xs.concat(ys)
-                 | trans:x                        transInside(t):xs           -> [x].concat(xs)
-                 |                                                            -> []
+  transInside :t = [:l exactly(t) transInside(t):xs] transInside(t):ys setHelped -> xs.concat(ys)
+                 | trans:x                           transInside(t):xs           -> [x].concat(xs)
+                 |                                                               -> []
 };
 
 let BSSeqInliner = ometa(BSNullOptimization) {
   App        = 'seq'
-               ['Js' :locals ['string' :s]] end
+               [:l 'Js' :locals ['string' :s]] end
                seqString(s):cs setHelped              -> ['And'].concat(cs).concat([jsValue('string', s)])
              | :rule anything*:args                   -> ['App', rule].concat(args),
-  inlineChar = BSOMetaParser.eChar:c                  -> ['App', 'exactly', jsValue('string', c)],
+  inlineChar = BSOMetaParser.eChar:c                  -> [null, 'App', 'exactly', jsValue('string', c)],
   seqString = &(:s ?(typeof s === 'string'))
               [ inlineChar*:cs ]                      -> cs
 
@@ -81,54 +92,67 @@ JumpTable.prototype.toTree = function() {
 let BSJumpTableOptimization = ometa(BSNullOptimization) {
   Or  (jtChoices('Or')  | trans)*:cs -> ['Or'].concat(cs),
   XOr (jtChoices('XOr') | trans)*:cs -> ['XOr'].concat(cs),
-  quotedString  = ['Js' :l ['string' :s ]] -> s,
-  jtChoice      = ['And' ['App' 'exactly' quotedString:x] anything*:rest]                  -> [x, ['And'].concat(rest)]
-                |        ['App' 'exactly' quotedString:x]                                  -> [x, jsValue('string', x)],
+  quotedString  = [:l 'Js' ['string' :s ]] -> s,
+  jtChoice      = [:l 'And' [:l1 'App' 'exactly' quotedString:x] anything*:rest]           -> [x, [l, 'And'].concat(rest)]
+    |                       [:l1 'App' 'exactly' quotedString:x]                           -> [x, jsValue('string', x)],
   jtChoices :op = jtChoice:c {new JumpTable(op, c)}:jt (jtChoice:c {jt.add(c)})* setHelped -> jt.toTree()
 };
 
 let BSFunctionOptimization = ometa(GenericMatcher) {
-  optimize  = trans:x -> x,
+  optimize = trans:x -> x,
 
-  trans = [:t ?(this[t] != undefined) apply(t):ans] -> ans,
+  pushLocation :loc = !(this._locations.push(loc)),
+  popLocation = !(this._locations.pop()),
 
-  somethingThatReturns = [ exactly(#And) apply(#AndReturn):ans ] -> ans
-                       | [ exactly(#And) end ]                   -> ['ReturnStructure', ['And']]
-                       | [ generatesStructure:t apply(t):ans ]   -> ['ReturnStructure', ['Store', ans]]
-                       | [ exactly(#Set) apply(#Set):ans ]       -> ['ReturnStructure', ['Parenthesis', ans]]
-                       | trans:x                                 -> ['ReturnStructure', x],
+  trans = [:loc :t ?(this[t] != undefined)
+           pushLocation(loc)
+           apply(t):ans
+           popLocation] -> [loc].concat(ans),
+
+  andReturn :l = notLast(#storeSomething)*:xs
+                 storeSomethingThatReturns:y              -> [l, 'And'].concat(xs.concat([y])),
+
+  somethingThatReturns = [ :l exactly(#And) andReturn(l):ans ]    -> ans
+                       | [ :l exactly(#And) end ]                 -> [l, 'ReturnStructure', [l, 'And']]
+                       | [ :l generatesStructure:t apply(t):ans ] -> [l, 'ReturnStructure', [l, 'Store', [l].concat(ans)]]
+                       | [ :l exactly(#Set) apply(#Set):ans ]     -> [l, 'ReturnStructure', [l, 'Parenthesis', [l].concat(ans)]]
+                       | trans:x                                  -> [l, 'ReturnStructure', x],
 
   generatesStructure = #Or | #XOr | #Opt | #Many | #Many1 | #Not
                      | #Lookahead | #Form | #ConsBy | #IdxConsBy
                      | #App | #JumpTable | #Interleave,
 
-  somethingThatCanPass      = [ generatesStructure:t
-                                apply(t):ans ]            -> ans,
+  somethingThatCanPass      = [ :loc generatesStructure:t
+                                ?(this[t] != undefined)
+                                pushLocation(loc)
+                                apply(t):ans
+                                popLocation ]             -> [loc].concat(ans),
 
-  storeSomething            = [ generatesStructure:t
-                                apply(t):ans ]            -> ['Store', ans]
+  storeSomething            = [ :loc generatesStructure:t
+                                ?(this[t] != undefined)
+                                pushLocation(loc)
+                                apply(t):ans
+                                popLocation ]             -> [loc, 'Store', [loc].concat(ans)]
                             | trans:x,
   storeSomethingThatReturns = somethingThatReturns:x,
 
-  functioned = somethingThatCanPass:x                     -> ['Function', ['Return', x]]
-             | storeSomethingThatReturns:x                -> ['FunctionStructure', x],
+  functioned = // somethingThatCanPass:x                     -> [null, 'Function', [null, 'Return', x]]
+             // |
+    storeSomethingThatReturns:x                -> [x[0], 'FunctionStructure', x],
 
-  AndReturn  notLast(#storeSomething)*:xs
-             storeSomethingThatReturns:y                  -> ['And'].concat(xs.concat([y])),
-
-  Or         functioned*:xs                               -> ['Or'].concat(xs),
-  XOr        functioned*:xs                               -> ['XOr'].concat(xs),
-  Opt        functioned:x                                 -> ['Opt',  x],
-  Many       functioned:x                                 -> ['Many',  x],
-  Many1      functioned:x                                 -> ['Many1', x],
-  Not        functioned:x                                 -> ['Not',       x],
-  Lookahead  functioned:x                                 -> ['Lookahead', x],
-  Form       functioned:x                                 -> ['Form',      x],
-  ConsBy     functioned:x                                 -> ['ConsBy',    x],
-  IdxConsBy  functioned:x                                 -> ['IdxConsBy', x],
-  App        :rule trans*:args                            -> ['App', rule].concat(args),
-  JumpTable  ([:c somethingThatReturns:e] -> [c, e])*:ces -> ['JumpTable'].concat(ces),
-  Interleave ([:m functioned:p] -> [m, p])*:xs            -> ['Interleave'].concat(xs),
+  Or         functioned*:xs                               -> ['Or'             ].concat(xs),
+  XOr        functioned*:xs                               -> ['XOr'            ].concat(xs),
+  Opt        functioned:x                                 -> ['Opt',       x   ],
+  Many       functioned:x                                 -> ['Many',      x   ],
+  Many1      functioned:x                                 -> ['Many1',     x   ],
+  Not        functioned:x                                 -> ['Not',       x   ],
+  Lookahead  functioned:x                                 -> ['Lookahead', x   ],
+  Form       functioned:x                                 -> ['Form',      x   ],
+  ConsBy     functioned:x                                 -> ['ConsBy',    x   ],
+  IdxConsBy  functioned:x                                 -> ['IdxConsBy', x   ],
+  App        :rule trans*:args                            -> ['App',       rule].concat(args),
+  JumpTable  ([:c somethingThatReturns:e] -> [c, e])*:ces -> ['JumpTable'      ].concat(ces),
+  Interleave ([:m functioned:p] -> [m, p])*:xs            -> ['Interleave'     ].concat(xs),
 
   // Do not generate structure :
   Pred       :expr                                        -> ['Pred', expr],
@@ -138,15 +162,19 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
   Location                                                -> ['Location'],
   PopArg                                                  -> ['PopArg'],
 
-  Rule       :name :location
+  Rule       :name
              ( somethingThatCanPass:b
-                    -> ['ReturnStructure', ['Store', b]]
-             | somethingThatReturns ):body                -> ['Rule', name, location, body]
+               -> [null, 'ReturnStructure',
+                   [null, 'Store', b]]
+             | somethingThatReturns ):body                -> ['Rule', name, body]
 };
+BSFunctionOptimization.initialize = function() { this._locations = []; };
+BSFunctionOptimization.location = function() { return this._locations[this._locations.length - 1]; }
 
 let BSOMetaOptimizer = ometa {
   optimizeGrammar = ['Grammar' :sn optimizeRule*:rs]          -> ['Grammar', sn].concat(rs),
-  optimizeRule    = :r ( BSSeqInliner.optimize(r):r
+  optimizeRule    = :r
+                       ( BSSeqInliner.optimize(r):r
                        | empty )
 
                        ( BSAssociativeOptimization.optimize(r):r

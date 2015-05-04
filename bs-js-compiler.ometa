@@ -228,10 +228,8 @@ let copyObject = function(obj) {
   return ret;
 };
 
-let jsValue = function(type, value) {
-  return [#Js, {}, [type, value]];
+let jsAtLocation = function(location, locals, expr) {
+  return [location, #Js, locals, expr];
 };
-
-let jsCode = function(locals, expr) {
-  return [#Js, copyObject(locals), expr];
-};
+let jsValue = function(type, value) { return jsAtLocation(null, {}, [type, value]); };
+let jsCode = function(locals, expr) { return jsAtLocation(null, copyObject(locals), expr); };

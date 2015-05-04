@@ -597,8 +597,9 @@ let OMeta = {
     return this._apply(r);
   },
   foreign: function(g, r) {
-    var gi = objectThatDelegatesTo(g, {input: makeOMInputStreamProxy(this.input)}),
-        ans = gi._apply(r);
+    var gi = objectThatDelegatesTo(g, {input: makeOMInputStreamProxy(this.input)});
+    gi.initialize();
+    var ans = gi._apply(r);
     this.input = gi.input.target;
     return ans;
   },

@@ -27,30 +27,30 @@ let BSOMetaParser = ometa(BaseStrParser) {
                          | char                                   )>:s -> unescape(s)
                  | char,
   tsString       = '\'' (~'\'' eChar)*:xs '\''                         -> xs.join(''),
-  characters     = '`' '`' (~('\'' '\'') eChar)*:xs '\'' '\''          -> [#App, #seq,     jsValue(#string, xs.join(''))],
-  sCharacters    = '"'     (~'"'         eChar)*:xs '"'                -> [#App, #token,   jsValue(#string, xs.join(''))],
-  string         = (('#' | '`') tsName | tsString):xs                  -> [#App, #exactly, jsValue(#string, xs)],
-  number         = <'-'? digit+>:n                                     -> [#App, #exactly, jsValue(#number, n)],
+  characters     = '`' '`' (~('\'' '\'') eChar)*:xs '\'' '\''          -> [@location, #App, #seq,     jsValue(#string, xs.join(''))],
+  sCharacters    = '"'     (~'"'         eChar)*:xs '"'                -> [@location, #App, #token,   jsValue(#string, xs.join(''))],
+  string         = (('#' | '`') tsName | tsString):xs                  -> [@location, #App, #exactly, jsValue(#string, xs)],
+  number         = <'-'? digit+>:n                                     -> [@location, #App, #exactly, jsValue(#number, n)],
   keyword :xs    = token(xs) ~letterOrDigit                            -> xs,
   args           = '(' listOf(#hostExpr, ','):xs ")"                   -> xs
                  | empty                                               -> [],
-  application    = "^"          name:rule args:as                      -> [#App, #super, jsValue(#string, rule)].concat(as)
-                 | name:grm "." name:rule args:as                      -> [#App, #foreign,
+  application    = "^"          name:rule args:as                      -> [@location, #App, #super, jsValue(#string, rule)].concat(as)
+                 | name:grm "." name:rule args:as                      -> [@location, #App, #foreign,
                                                                            jsCode(this.locals, [#get, grm]),
                                                                            jsValue(#string, rule)].concat(as)
-                 |              name:rule args:as                      -> [#App, rule].concat(as),
-  hostExpr       = BSSemActionParser.expr:r                            -> jsCode(copyObject(this.locals), r),
-  curlyHostExpr  = BSSemActionParser.curlySemAction:r                  -> jsCode(copyObject(this.locals), r),
-  primHostExpr   = BSSemActionParser.semAction:r                       -> jsCode(copyObject(this.locals), r),
+                 |              name:rule args:as                      -> [@location, #App, rule].concat(as),
+  hostExpr       = BSSemActionParser.expr:r                            -> jsCode(this.locals, r),
+  curlyHostExpr  = BSSemActionParser.curlySemAction:r                  -> jsCode(this.locals, r),
+  primHostExpr   = BSSemActionParser.semAction:r                       -> jsCode(this.locals, r),
   atomicHostExpr = curlyHostExpr | primHostExpr,
   semAction      = curlyHostExpr:x
                  | "!"  atomicHostExpr:x,
   arrSemAction   = "->" atomicHostExpr:x,
-  semPred        = "?"  atomicHostExpr:x                               -> [#Pred, x],
-  expr           = expr5(true):x ("|"  expr5(true))+:xs                -> [#Or,  x].concat(xs)
-                 | expr5(true):x ("||" expr5(true))+:xs                -> [#XOr, x].concat(xs)
+  semPred        = "?"  atomicHostExpr:x                               -> [@location, #Pred, x],
+  expr           = expr5(true):x ("|"  expr5(true))+:xs                -> [@location, #Or,   x].concat(xs)
+                 | expr5(true):x ("||" expr5(true))+:xs                -> [@location, #XOr,  x].concat(xs)
                  | expr5(false),
-  expr5 :ne      = interleavePart:x ("&&" interleavePart)+:xs          -> [#Interleave, x].concat(xs)
+  expr5 :ne      = interleavePart:x ("&&" interleavePart)+:xs          -> [@location, #Interleave, x].concat(xs)
                  | expr4(ne),
   interleavePart = "(" expr4(true):part ")"                            -> ["1", part]
                  | expr4(true):part modedIPart(part),
@@ -58,34 +58,34 @@ let BSOMetaParser = ometa(BaseStrParser) {
                  | [#And [#Many1 :part]]                               -> ["+", part]
                  | [#And [#Opt   :part]]                               -> ["?", part]
                  | :part                                               -> ["1", part],
-  expr4 :ne      =                expr3*:xs arrSemAction:act           -> [#And].concat(xs).concat([act])
-                 | ?ne            expr3+:xs                            -> [#And].concat(xs)
-                 | ?(ne == false) expr3*:xs                            -> [#And].concat(xs),
-  optIter :x     = '*'                                                 -> [#Many,  x]
-                 | '+'                                                 -> [#Many1, x]
-                 | '?'                                                 -> [#Opt,   x]
+  expr4 :ne      =                expr3*:xs arrSemAction:act           -> [@location, #And].concat(xs).concat([act])
+                 | ?ne            expr3+:xs                            -> [@location, #And].concat(xs)
+                 | ?(ne == false) expr3*:xs                            -> [@location, #And].concat(xs),
+  optIter :x     = '*'                                                 -> [@location, #Many,  x]
+                 | '+'                                                 -> [@location, #Many1, x]
+                 | '?'                                                 -> [@location, #Opt,   x]
                  | empty                                               -> x,
-  optBind :x     = ':' name:n                                          -> { this.locals[n] = true; [#Set, n, x] }
+  optBind :x     = ':' name:n                                          -> { this.locals[n] = true; [@location, #Set, n, x] }
                  | empty                                               -> x,
-  expr3          = ":" name:n                                          -> { this.locals[n] = true; [#Set, n, [#PopArg]] }
+  expr3          = ":" name:n                                          -> { this.locals[n] = true; [@location, #Set, n, [null, #PopArg]] }
                  | (expr2:x optIter(x) | semAction):e optBind(e)
                  | semPred,
-  expr2          = "~" expr2:x                                         -> [#Not,       x]
-                 | "&" expr1:x                                         -> [#Lookahead, x]
+  expr2          = "~" expr2:x                                         -> [@location, #Not,       x]
+                 | "&" expr1:x                                         -> [@location, #Lookahead, x]
                  | expr1,
   expr1          = application
                  | ( keyword('undefined') | keyword('nil')
-                   | keyword('true')      | keyword('false') ):x       -> [#App, #exactly, x]
+                   | keyword('true')      | keyword('false') ):x       -> [@location, #App, #exactly, x]
                  | spaces (characters | sCharacters | string | number)
-                 | "["  expr:x "]"                                     -> [#Form,      x]
-                 | "<"  expr:x ">"                                     -> [#ConsBy,    x]
-                 | "@<" expr:x ">"                                     -> [#IdxConsBy, x]
+                 | "["  expr:x "]"                                     -> [@location, #Form,      x]
+                 | "<"  expr:x ">"                                     -> [@location, #ConsBy,    x]
+                 | "@<" expr:x ">"                                     -> [@location, #IdxConsBy, x]
                  | "("  expr:x ")"                                     -> x,
   ruleName       = name
                  | spaces tsString,
   rule           = &(ruleName:n) !(this.locals = {})
-                     rulePart(n):x ("," rulePart(n))*:xs               -> [#Rule, n, @location, [#Or, x].concat(xs)],
-  rulePart :rn   = ruleName:n ?(n == rn) expr4(false):b1 ( "=" expr:b2 -> [#And, b1, b2]
+                     rulePart(n):x ("," rulePart(n))*:xs               -> [@location, #Rule, n, [@location, #Or, x].concat(xs)],
+  rulePart :rn   = ruleName:n ?(n == rn) expr4(false):b1 ( "=" expr:b2 -> [@location, #And, b1, b2]
                                                          | empty       -> b1
                                                          ),
   grammar        = keyword('ometa') ( "(" name:sni ")" -> sni
@@ -145,7 +145,8 @@ let BSOMetaTranslator = ometa {
   FunctionStructure { this._storeVar++; }
            transFn+:xs
            { this._storeVar--; }           -> ['function(){var $r', this._storeVar + 1,
-                                               '=this._startStructure(-1);', xs.join(';'),
+                                               '=this._startStructure(', this.getLocationId(), ');',
+                                               xs.join(';'),
                                                ';return this._endStructure($r', this._storeVar + 1, ');}']               .join(''),
   ReturnStructure transFn:x                -> ['$r', this._storeVar, '.value=', x]                                       .join(''),
   Return          transFn:x                -> ['return ', x]                                                             .join(''),
@@ -156,13 +157,12 @@ let BSOMetaTranslator = ometa {
 
   Rule       :name {this.rName = name;
                     this._storeVar = 0; }
-             :location !createSourceMapId():loc { addToSourseMap(loc, location.start, location.stop); }
              trans:body                    -> ['\n"', name, '":function(){var $elf=this,',
                                                '$vars={},',
-                                               '$r0=this._startStructure(', loc, ');', body,
+                                               '$r0=this._startStructure(', this.getLocationId(), ');', body,
                                                ';return this._endStructure($r0);}']                                      .join(''),
   Grammar    :sName
-             {this.sName = sName}
+             { this.sName = sName; this._locations = []; }
              trans*:rules                  -> ['objectThatDelegatesTo(', sName, ',{', rules.join(','), '})'].join(''),
 
   intPart  = [:mode transFn:part]          -> (mode.toProgramString()  + "," + part),
@@ -170,7 +170,10 @@ let BSOMetaTranslator = ometa {
 
   transJs :locals = BSSemActionTranslator.jstrans(this._storeVar, locals),
 
-  trans    = [:t apply(t):ans]             -> ans,
+  trans    = [:loc :t
+              { this.pushLocation(loc); }
+              apply(t):ans
+              { this.popLocation(); } ]    -> ans,
   transFn  = trans:x                       -> x
 };
 BSOMetaTranslator._callables = {
@@ -192,4 +195,18 @@ BSOMetaTranslator.jumpTableCode = function(cases) {
     buf.nextPutAll("case " + cases[i][0] + ":" + cases[i][1] + ";break;");
   buf.nextPutAll("default: throw fail}return this._endStructure($r" + (this._storeVar + 1) + ");}).call(this)");
   return buf.contents();
+};
+BSOMetaTranslator.pushLocation = function(location) {
+  if (location != null) {
+    let locationId = createSourceMapId();
+    addToSourseMap(locationId, location.start, location.stop);
+    this._locations.push(locationId);
+  } else
+    this._locations.push(this._locations[this._locations.length - 1]);
+};
+BSOMetaTranslator.popLocation = function() {
+  this._locations.pop();
+};
+BSOMetaTranslator.getLocationId = function() {
+  return this._locations[this._locations.length - 1];
 };
