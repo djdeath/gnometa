@@ -118,8 +118,8 @@ const TextView = new Lang.Class({
     rect1.union(rect1, rect2);
     // GtkSourceView WTF?
     rect1.x += this.buffer_to_window_coords(Gtk.TextWindowType.WIDGET, 0, 0)[0] - 4;
-    rect1.x += this.get_hadjustment().get_value();
-    rect1.y += this.get_vadjustment().get_value();
+    rect1.x -= this.hadjustment.value;
+    rect1.y -= this.vadjustment.value;
     return rect1;
   },
 
