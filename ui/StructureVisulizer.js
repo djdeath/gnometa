@@ -100,6 +100,7 @@ popoverview.connect('rule-move', function(widget, way) {
   let match = _structureTree[_structureTreeIdx];
   popoverview.setData.apply(popoverview, ometaLabel(match.id));
   textview.hightlightRange(match.start.idx, match.stop.idx);
+  structview.setData(match.value);
 }.bind(this));
 
 let structview = new OutputView.OutputView();
