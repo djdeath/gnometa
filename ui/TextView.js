@@ -17,22 +17,28 @@ const TextView = new Lang.Class({
     'selection-changed': { param_types: [ GObject.TYPE_ULONG, GObject.TYPE_ULONG ] },
   },
 
+  _colors: {
+    'highlight': 'lightblue',
+    'error': 'red',
+  },
+
   _init: function() {
     this.parent();
     this.visible = true;
     this.show_line_numbers = true;
     this.following_highlight = false;
-    this._highlight = { start: 0, end: 0 };
+    this._data = '';
 
     let lang_manager = GtkSource.LanguageManager.get_default();
     this.buffer.set_language(lang_manager.get_language('js'));
 
+    this._tagsOffsets = {}
     let tag_table = this.buffer.get_tag_table();
-    let tag = new Gtk.TextTag({
-      name: 'highlight',
-      background: 'lightblue',
-    });
-    tag_table.add(tag);
+    for (let i in this._colors) {
+      let tag = new Gtk.TextTag({ name: i, background: this._colors[i], });
+      tag_table.add(tag);
+      this._tagsOffsets[i] = { start: 0, end: 0 };
+    }
 
     this._setInControl(false);
 
@@ -85,10 +91,10 @@ const TextView = new Lang.Class({
   },
 
   _scrollToHighlight: function() {
-    let rect1 = this.get_iter_location(this._iterAtOffset(this._highlight.start)),
-        rect2 = this.get_iter_location(this._iterAtOffset(this._highlight.end));
-    this.vadjustment.value =
-      (rect1.y + rect2.y) / 2 - this.vadjustment.page_increment / 2;
+    let highlight = this._getRange('highlight');
+    let rect1 = this.get_iter_location(this._iterAtOffset(highlight.start)),
+        rect2 = this.get_iter_location(this._iterAtOffset(highlight.end));
+    this.vadjustment.value = (rect1.y + rect2.y) / 2 - this.vadjustment.page_increment / 2;
   },
 
   _emitSignalOnSelection: function(signal) {
@@ -100,8 +106,9 @@ const TextView = new Lang.Class({
   },
 
   _emitSignalOnMenu: function(signal) {
-    if (this._highlight.start != this._highlight.end)
-      this.emit(signal, this._highlight.start, this._highlight.end);
+    let highlight = this._getRange('highlight');
+    if (highlight.start != highlight.end)
+      this.emit(signal, highlight.start, highlight.end);
   },
 
   getOffsetAtLocation: function(x, y) {
@@ -125,29 +132,35 @@ const TextView = new Lang.Class({
     return rect1;
   },
 
+  _getRange: function(name) {
+    return this._tagsOffsets[name];
+  },
   _iterAtOffset: function(offset) {
     return this.buffer.get_iter_at_offset(offset);
   },
-  _highlightRange: function(start, end) {
-    this.buffer.apply_tag_by_name('highlight',
+  _highlightRange: function(name, start, end) {
+    this.buffer.apply_tag_by_name(name,
                                   this._iterAtOffset(start),
                                   this._iterAtOffset(end));
   },
-  _unhighlightRange: function(start, end) {
-    this.buffer.remove_tag_by_name('highlight',
+  _unhighlightRange: function(name, start, end) {
+    this.buffer.remove_tag_by_name(name,
                                    this._iterAtOffset(start),
                                    this._iterAtOffset(end));
   },
-  hightlightRange: function(start, end) {
-    if (this._highlight)
-      this._unhighlightRange(this._highlight.start, this._highlight.end);
-    this._highlight = {
-      start: start,
-      end: end,
-    };
-    this._highlightRange(this._highlight.start, this._highlight.end);
+  hightlightRange: function(name, start, end) {
+    let highlight = this._getRange(name);
+    this._unhighlightRange(name, 0, this._data.length);
+    highlight.start = start;
+    highlight.end = end;
+    this._highlightRange(name, highlight.start, highlight.end);
     if (this.following_highlight)
       this._scrollToHighlight();
+  },
+  removeHighlightRange: function(name) {
+    let highlight = this._getRange(name);
+    this._unhighlightRange(name, highlight.start, highlight.end);
+    highlight.start = highlight.end = 0;
   },
   removeSelection: function() {
     let iter = this.buffer.get_iter_at_offset(0);

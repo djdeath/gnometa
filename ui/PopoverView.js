@@ -36,6 +36,6 @@ const PopoverView = new Lang.Class({
       textChanged = true;
     }
 
-    this._sourceview.hightlightRange(start, end);
+    this._sourceview.hightlightRange('highlight', start, end);
   },
 });

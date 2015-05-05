@@ -99,7 +99,7 @@ popoverview.connect('rule-move', function(widget, way) {
   _structureTreeIdx = i;
   let match = _structureTree[_structureTreeIdx];
   popoverview.setData.apply(popoverview, ometaLabel(match.id));
-  textview.hightlightRange(match.start.idx, match.stop.idx);
+  textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
   structview.setData(match.value);
 }.bind(this));
 
@@ -111,8 +111,10 @@ textview.onChange(function(text) {
   OMeta.BSOMetaJSParser.matchAll(text, "topLevel", undefined, function(err, tree, value) {
     if (err) {
       log('Parsing: ' + err);
+      textview.hightlightRange('error', err.idx, text.length - 1);
       return;
     }
+    textview.removeHighlightRange('error');
 
     _structure = tree;
     //structview.setData(value);
@@ -122,7 +124,7 @@ textview.onChange(function(text) {
 textview.connect('offset-changed', function(widget, offset) {
   _structureTree = getMatchStructure(offset, offset);
   let  [idx, match] = bestNamedStructureMatch(_structureTree);
-  textview.hightlightRange(match.start.idx, match.stop.idx);
+  textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
   structview.setData(match.value);
 }.bind(this));
 textview.connect('selection-changed', function(widget, startOffset, endOffset) {
@@ -130,14 +132,10 @@ textview.connect('selection-changed', function(widget, startOffset, endOffset) {
   _structureTreeIdx = 0;
   let match = _structureTree[_structureTreeIdx];
   textview.removeSelection();
-  textview.hightlightRange(match.start.idx, match.stop.idx);
+  log(startOffset + ',' + endOffset + ' -> ' + match.start.idx + ',' + match.stop.idx);
+  textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
   structview.setData(match.value);
 });
-
-let positionPopover = function(popover, parent, rect) {
-  let allocation = parent.get_allocation();
-  popover.pointing_to = rect;
-};
 
 textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
   if (!_structure)
@@ -146,10 +144,10 @@ textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
   _structureTree = getMatchStructure(startOffset, endOffset);
   let [idx, match] = bestNamedStructureMatch(_structureTree);
   _structureTreeIdx = idx;
-  textview.hightlightRange(match.start.idx, match.stop.idx);
+  textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
 
   let rect = textview.getRectForRange(match.start.idx, match.stop.idx);
-  positionPopover(popover, widget, rect);
+  popover.pointing_to = rect;
   popoverview.setData.apply(popoverview, ometaLabel(match.id));
   popover.show();
   structview.setData(match.value);
