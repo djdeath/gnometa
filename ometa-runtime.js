@@ -626,7 +626,7 @@ let OMeta = {
       let ret = realArgs.length == 1 ? m._apply.call(m, realArgs[0]) : m._applyWithArgs.apply(m, realArgs);
       if (callback)
         callback(null, ret, ret.value);
-      return ret.value;
+      return ret;
     } catch (f) {
       if (f != fail)
         throw f;
@@ -645,13 +645,19 @@ let OMeta = {
       else
         throw err;
     }
-    return null;
+    return { value: null };
   },
-  match: function(obj, rule, args, callback) {
+  matchStructure: function(obj, rule, args, callback) {
     return this._genericMatch([obj].toOMInputStream(), rule, args, callback);
   },
-  matchAll: function(listyObj, rule, args, matchFailed) {
+  matchAllStructure: function(listyObj, rule, args, matchFailed) {
     return this._genericMatch(listyObj.toOMInputStream(), rule, args, matchFailed);
+  },
+  match: function(obj, rule, args, callback) {
+    return this.matchStructure(obj, rule, args, callback).value;
+  },
+  matchAll: function(listyObj, rule, args, matchFailed) {
+    return this.matchAllStructure(listyObj, rule, args, matchFailed).value;
   },
   createInstance: function() {
     var m = objectThatDelegatesTo(this, {});
