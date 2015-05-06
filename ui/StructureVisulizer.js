@@ -10,8 +10,8 @@ const OutputView = imports.OutputView;
 const PopoverView = imports.PopoverView;
 const SplitView = imports.SplitView;
 const TextView = imports.TextView;
-const OMeta = imports.standalone;
-
+//const UiHelper = imports.UiHelper;
+const UiHelper = imports.UiHelperClient;
 const Utils = imports.Utils;
 
 // Source mapping
@@ -68,7 +68,6 @@ let bestNamedStructureMatch = function(matches) {
 };
 
 // Structure tree
-let _structureTree = null;
 let _structureTreeIdx = -1;
 
 //
@@ -88,65 +87,100 @@ let popover = new Gtk.Popover({
 popover.set_size_request(400, 400);
 let popoverview = new PopoverView.PopoverView();
 popover.add(popoverview);
-popoverview.connect('rule-move', function(widget, way) {
-  let i = _structureTreeIdx + way;
-  while (i >= 0 && i < _structureTree.length && _structureTree[i].id == -1) i += way;
-  if (i < 0 || i >= _structureTree.length || _structureTree[_structureTreeIdx].id == -1) return;
-  _structureTreeIdx = i;
-  let match = _structureTree[_structureTreeIdx];
-  popoverview.setData.apply(popoverview, ometaLabel(match.id));
-  textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-  structview.setData(match.value);
-}.bind(this));
 
 let structview = new OutputView.OutputView();
 paned.addWidget(structview);
 
 //
 textview.onChange(function(text) {
-  OMeta.BSOMetaJSParser.matchAll(text, "topLevel", undefined, function(err, tree, value) {
-    if (err) {
-      log('Parsing: ' + err);
-      textview.hightlightRange('error', err.idx, text.length - 1);
+  let data = { name: 'OMeta',
+               rule: 'topLevel',
+               input: text,
+               output: 'view0', };
+  UiHelper.executeCommand('translate', data, function(error, ret) {
+    if (error) {
+      textview.hightlightRange('error', error.idx, text.length - 1);
       return;
     }
-    textview.removeHighlightRange('error');
-
-    _structure = tree;
-    //structview.setData(value);
-  });
+    textview.removeSelection('error');
+  }.bind(this));
 }.bind(this));
 
 textview.connect('offset-changed', function(widget, offset) {
-  _structureTree = getMatchStructure(offset, offset);
-  let  [idx, match] = bestNamedStructureMatch(_structureTree);
-  textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-  structview.setData(match.value);
+  let data = { input: 'view0', output: 'view0', offset: { start: offset, end: offset }, };
+  UiHelper.executeCommand('match-structure', data, function(error, ret) {
+    if (error) {
+      log(error);
+      return;
+    }
+    UiHelper.executeCommand('get-best-match', { input: 'view0' }, function(error, ret) {
+      if (error) {
+        log(error);
+        return;
+      }
+      let  [idx, match] = ret;
+      _structureTreeIdx = idx;
+      textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
+      structview.setData(match.value);
+    }.bind(this));
+  }.bind(this));
 }.bind(this));
 textview.connect('selection-changed', function(widget, startOffset, endOffset) {
-  _structureTree = getMatchStructure(startOffset, endOffset);
-  _structureTreeIdx = 0;
-  let match = _structureTree[_structureTreeIdx];
-  textview.removeSelection();
-  log(startOffset + ',' + endOffset + ' -> ' + match.start.idx + ',' + match.stop.idx);
-  textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-  structview.setData(match.value);
+  let data = { input: 'view0', output: 'view0', offset: { start: startOffset, end: endOffset }, };
+  UiHelper.executeCommand('match-structure', data, function(error, ret) {
+    textview.removeSelection();
+    if (error) {
+      log(error);
+      return;
+    }
+    _structureTreeIdx = 0;
+    UiHelper.executeCommand('get-match', { input: 'view0', index: _structureTreeIdx }, function(error, match) {
+      if (error) {
+        log(error);
+        return;
+      }
+      textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
+      structview.setData(match.value);
+    }.bind(this));
+  }.bind(this));
 });
 
 textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
-  if (!_structure)
-    return false;
+  let data = { input: 'view0', output: 'view0', offset: { start: startOffset, end: endOffset }, };
+  UiHelper.executeCommand('match-structure', data, function(error, ret) {
+    if (error) {
+      log(error);
+      return;
+    }
+    UiHelper.executeCommand('get-best-match', { input: 'view0' }, function(error, ret) {
+      if (error) {
+        log(error);
+        return;
+      }
+      let  [idx, match] = ret;
+      _structureTreeIdx = idx;
+      textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
+      let rect = textview.getRectForRange(match.start.idx, match.stop.idx);
+      popover.pointing_to = rect;
+      popoverview.setData.apply(popoverview, ometaLabel(match.id));
+      popover.show();
+      structview.setData(match.value);
+    }.bind(this));
+  }.bind(this));
+}.bind(this));
 
-  _structureTree = getMatchStructure(startOffset, endOffset);
-  let [idx, match] = bestNamedStructureMatch(_structureTree);
-  _structureTreeIdx = idx;
-  textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-
-  let rect = textview.getRectForRange(match.start.idx, match.stop.idx);
-  popover.pointing_to = rect;
-  popoverview.setData.apply(popoverview, ometaLabel(match.id));
-  popover.show();
-  structview.setData(match.value);
+popoverview.connect('rule-move', function(widget, way) {
+  _structureTreeIdx += way;
+  UiHelper.executeCommand('get-match', { input: 'view0', index: _structureTreeIdx }, function(error, match) {
+    if (error) {
+      log(error);
+        return;
+    }
+    textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
+    popoverview.setData.apply(popoverview, ometaLabel(match.id));
+    textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
+    structview.setData(match.value);
+  }.bind(this));
 }.bind(this));
 
 //

@@ -17,11 +17,11 @@ O = @
 
 OO = $(O$(V))
 
-OMETA = $(OO) echo " GEN " $@;
-GCR = $(OO) echo " GLIB_COMPILE_RESOURCES " $@;
+OMETA = $(OO) echo " GEN " $@; ./gnometa
+GCR = $(OO) echo " GLIB_COMPILE_RESOURCES " $@; glib-compile-resources
 
 %.js.new: %.ometa
-	$(OMETA) ./gnometa $< > $@
+	$(OMETA) $< > $@
 
 %.js: %.js.new
 	$(OO) mv $< $@
@@ -29,12 +29,15 @@ GCR = $(OO) echo " GLIB_COMPILE_RESOURCES " $@;
 gen: $(OMETA_STEP_GEN)
 
 ui/standalone.js: $(OMETA_SOURCES) $(OMETA_RUNTIME)
-	$(OO) $(OMETA) ./gnometa -b $(OMETA_SOURCES) -s $@.map -o $@
+	$(OO) $(OMETA) -b $(OMETA_SOURCES) -s $@.map -o $@
 
-standalone: ui/standalone.js
+ui/CustomJson.js: ometa-base.ometa ui/CustomJson.ometa $(OMETA_RUNTIME)
+	$(OO) $(OMETA) -b ometa-base.ometa ui/CustomJson.ometa -o $@
+
+standalone: ui/standalone.js ui/CustomJson.js
 
 ui/org.gnome.Gnometa.gresource: ui/org.gnome.Gnometa.gresource.xml ui/*.ui
-	$(OO) $(GCR) glib-compile-resources --sourcedir=ui ui/org.gnome.Gnometa.gresource.xml
+	$(OO) $(GCR) --sourcedir=ui ui/org.gnome.Gnometa.gresource.xml
 
 ui: standalone ui/org.gnome.Gnometa.gresource
 

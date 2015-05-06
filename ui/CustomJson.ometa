@@ -1,0 +1,33 @@
+let CustomJson = ometa(BaseStrParser) {
+  boolean      = "true" -> true | "false" -> false,
+  number       = spaces <'-'? digit+ ('.' digit+)?>:f                                -> parseFloat(f),
+  hexDigit     = char:x {this.hexDigits.indexOf(x.toLowerCase())}:v ?(v >= 0)        -> v,
+  escapeChar   = <'\\' ( 'u' hexDigit hexDigit hexDigit hexDigit
+                       | 'x' hexDigit hexDigit
+                       | char                                    )>:s                -> unescape(s),
+  str          = "\""  (escapeChar | ~'"'  char)*:cs '"'                             -> cs.join(''),
+
+  null         = "null"                                                              -> null,
+
+  array        = "[" !this.newArray():a
+                 ( value:v { a.push(v); }
+                   ("," value:v { a.push(v); })*
+                   | empty ) "]" {log('array: ' + a.length);}                                                        -> a,
+
+  assoc        = str:k ":" value:v                                                   -> [k, v],
+  object       = "{" !this.newObject():o
+                 ( assoc:a { o[a[0]] = a[1]; }
+                   ("," assoc:a { o[a[0]] = a[1]; })*
+                 | empty ) "}"                                                         -> o,
+
+  reference    = "$" <digit+>:n                                                      -> this.getAtom(parseFloat(n)),
+
+  value        = array | boolean | object | number | str | reference | null
+};
+CustomJson.newObject = function() { return (this._atoms[this._id++] = {}); };
+CustomJson.newArray = function() { return (this._atoms[this._id++] = []); };
+CustomJson.getAtom = function(id) { return this._atoms[id]; };
+CustomJson.initialize = function() {
+  this._atoms = {};
+  this._id = 0;
+};
