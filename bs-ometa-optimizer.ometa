@@ -136,9 +136,8 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
                             | trans:x,
   storeSomethingThatReturns = somethingThatReturns:x,
 
-  functioned = // somethingThatCanPass:x                     -> [null, 'Function', [null, 'Return', x]]
-             // |
-    storeSomethingThatReturns:x                -> [x[0], 'FunctionStructure', x],
+  functioned = somethingThatCanPass:x                     -> [x[0], 'Function', [null, 'Return', x]]
+             | storeSomethingThatReturns:x                -> [x[0], 'FunctionStructure', x],
 
   Or         functioned*:xs                               -> ['Or'             ].concat(xs),
   XOr        functioned*:xs                               -> ['XOr'            ].concat(xs),

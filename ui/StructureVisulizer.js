@@ -45,7 +45,8 @@ let getMatchStructure = function(startOffset, endOffset) {
   let matches = [], child = _structure;
   let iter = 0;
   do {
-    matches.unshift(child);
+    for (let i = 0; i < child.ids.length; i++)
+      matches.unshift({ id: child.ids[i], start: child.start, stop: child.stop, value: child.value });
     child = findMatchingStructureChild(child, startOffset, endOffset);
     iter++;
   } while (child);

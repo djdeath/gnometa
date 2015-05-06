@@ -302,7 +302,7 @@ let OMeta = {
   },
   _startStructure: function(id) {
     return {
-      id: id,
+      ids: [id],
       start: this._structureLocation(this.input),
       stop: null,
       children: [],
@@ -316,8 +316,25 @@ let OMeta = {
   _getStructureValue: function(structure) {
     return structure.value;
   },
+  _structureMatches: function(parent, child) {
+    return (parent.start.idx == child.start.idx &&
+            parent.stop.idx == child.stop.idx);
+  },
   _endStructure: function(structure) {
     structure.stop = this._structureLocation(this.input);
+    if (structure.children.length == 1) {
+      let child = structure.children[0];
+      if (child.single && this._structureMatches(structure, child)) {
+        structure.ids.concat(child.ids);
+        structure.children = [];
+        structure.single = true;
+      }
+    } else if (structure.children.length == 0)
+      structure.single = true;
+    return structure;
+  },
+  _forwardStructure: function(structure, id) {
+    structure.ids.unshift(id);
     return structure;
   },
 
