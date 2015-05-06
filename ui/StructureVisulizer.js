@@ -12,20 +12,15 @@ const SplitView = imports.SplitView;
 const TextView = imports.TextView;
 const OMeta = imports.standalone;
 
-//
-let loadFile = function(path) {
-  let file = Gio.File.new_for_path(path);
-  let [, source] = file.load_contents(null);
-  return '' + source;
-};
+const Utils = imports.Utils;
 
 // Source mapping
-const OMetaMap = JSON.parse(loadFile('standalone.js.map'));
+const OMetaMap = JSON.parse(Utils.loadFile('standalone.js.map'));
 
 let _ometaFiles = {};
 let ometaCode = function(filename, start, stop) {
   if (!_ometaFiles[filename]) {
-    _ometaFiles[filename] = loadFile('../' + filename);
+    _ometaFiles[filename] = Utils.loadFile('../' + filename);
   }
   return _ometaFiles[filename].slice(start, stop).trim();
 };
@@ -33,7 +28,7 @@ let ometaCode = function(filename, start, stop) {
 let ometaLabel = function(id) {
   let sitem = OMetaMap.map[id];
   let filename = OMetaMap.filenames[sitem[0]];
-  return [filename, loadFile('../' + filename), sitem[1], sitem[2]];
+  return [filename, Utils.loadFile('../' + filename), sitem[1], sitem[2]];
 };
 
 // Structure searching
@@ -154,7 +149,7 @@ textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
 }.bind(this));
 
 //
-let source = loadFile(ARGV[0]);
+let source = Utils.loadFile(ARGV[0]);
 textview.setData(source);
 
 //
