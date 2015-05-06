@@ -296,10 +296,14 @@ let OMeta = {
              start: retVal.start.idx,
              stop: this.input.idx, };
   },
+  _structureLocation: function(input) {
+    return { lst: input.lst,
+             idx: input.idx };
+  },
   _startStructure: function(id) {
     return {
       id: id,
-      start: this.input,
+      start: this._structureLocation(this.input),
       stop: null,
       children: [],
       value: null,
@@ -313,7 +317,7 @@ let OMeta = {
     return structure.value;
   },
   _endStructure: function(structure) {
-    structure.stop = this.input;
+    structure.stop = this._structureLocation(this.input);
     return structure;
   },
 
@@ -406,13 +410,14 @@ let OMeta = {
     throw fail;
   },
   _not: function(x) {
-    var r = this._startStructure(-1);
+    var origInput = this.input,
+        r = this._startStructure(-1);
     try {
       this._appendStructure(r, x.call(this));
     } catch (f) {
       if (f != fail)
         throw f;
-      this.input = r.start;
+      this.input = origInput;
       r.value = true;
       return this._endStructure(r);
     }
@@ -462,13 +467,14 @@ let OMeta = {
     this._xor = this._or;
   },
   _opt: function(x) {
-    var r = this._startStructure(-1);
+    var origInput = this.input,
+        r = this._startStructure(-1);
     try {
       r = x.call(this);
     } catch (f) {
       if (f != fail)
         throw f;
-      this.input = r.start;
+      this.input = origInput;
     }
     return this._endStructure(r);
   },
@@ -507,15 +513,17 @@ let OMeta = {
     return this._endStructure(r);
   },
   _consumedBy: function(x) {
-    var r = this._startStructure(-1);
+    var origInput = this.input,
+        r = this._startStructure(-1);
     this._appendStructure(r, x.call(this));
-    r.value = r.start.upTo(this.input);
+    r.value = origInput.upTo(this.input);
     return this._endStructure(r);
   },
   _idxConsumedBy: function(x) {
-    var r = this._startStructure(-1);
+    var origInput = this.input,
+        r = this._startStructure(-1);
     this._appendStructure(r, x.call(this));
-    r.value = {fromIdx: r.start.idx, toIdx: this.input.idx};
+    r.value = {fromIdx: origInput.idx, toIdx: this.input.idx};
     return this._endStructure(r);
   },
   _interleave: function(mode1, part1, mode2, part2 /* ..., moden, partn */) {
