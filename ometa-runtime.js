@@ -292,13 +292,11 @@ resetSourceMap();
 
 let OMeta = {
   _extractLocation: function(retVal) {
-    return { input: retVal.start.lst,
-             start: retVal.start.idx,
+    return { start: retVal.start.idx,
              stop: this.input.idx, };
   },
   _structureLocation: function(input) {
-    return { lst: input.lst,
-             idx: input.idx };
+    return { idx: input.idx };
   },
   _startStructure: function(id) {
     return {
@@ -516,6 +514,7 @@ let OMeta = {
   _many1: function(x) { return this._many(x, true); },
   _form: function(x) {
     var r = this._startStructure(-1);
+    r.form = true;
     this._appendStructure(r, this._apply("anything"));
     var v = r.value;
     if (!isSequenceable(v))
