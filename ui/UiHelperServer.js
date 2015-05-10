@@ -14,29 +14,24 @@ let inputDataStream = Gio.DataInputStream.new(inputStream);
 let handleCommand = function(cmd) {
   try {
     UiHelper.executeCommand(cmd.op, cmd.data, function(error, data) {
-      if (error) {
-        let msg = { id: cmd.id, op: 'error', message: error.message, idx: error.idx };
-        outpuStream.write_all(JSON.stringify(msg) + '\n', null);
-        return;
-      }
       cmd.data = data;
       outpuStream.write_all(JSON.stringify(cmd) + '\n', null);
     }.bind(this));
   } catch (error) {
-    log(error);
+    cmd.data = null;
+    cmd.error = error.message
+    outpuStream.write_all(JSON.stringify(cmd) + '\n', null);
   }
 };
 
 let readLine = null, gotLine = null;
 gotLine = function(stream, res) {
-  try {
-    let [data, length] = inputDataStream.read_line_finish(res);
+  let [data, length] = inputDataStream.read_line_finish(res);
+  if (length > 0) {
     readLine();
     handleCommand(JSON.parse(data));
-  } catch (error) {
-    log(error);
+  } else
     Mainloop.quit('ui-helper');
-  }
 };
 readLine = function() {
   inputDataStream.read_line_async(0, null, gotLine.bind(this));
