@@ -19,6 +19,7 @@ const PopoverView = new Lang.Class({
 
   _init: function(args) {
     this.parent(args);
+    this.visible = true;
 
     this._sourceview = new TextView.TextView();
     this._sourceview.following_highlight = true;
