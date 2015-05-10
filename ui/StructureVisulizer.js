@@ -102,7 +102,7 @@ textview.onChange(function(text) {
       textview.hightlightRange('error', error.idx, text.length - 1);
       return;
     }
-    textview.removeSelection('error');
+    textview.removeHighlightRange('error');
   }.bind(this));
 }.bind(this));
 
