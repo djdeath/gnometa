@@ -30,42 +30,6 @@ let ometaLabel = function(id) {
   return [filename, Utils.loadFile('../' + filename), sitem[1], sitem[2]];
 };
 
-// Structure searching
-let _structure = null;
-let findMatchingStructureChild = function(parent, startOffset, endOffset) {
-  for (let i = 0; i < parent.children.length; i++) {
-    let child = parent.children[i];
-    if (child.start.idx <= startOffset && child.stop.idx >= endOffset)
-      return child;
-  }
-  return null;
-};
-let getMatchStructure = function(startOffset, endOffset) {
-  let matches = [], child = _structure;
-  let iter = 0;
-  do {
-    for (let i = 0; i < child.ids.length; i++)
-      matches.unshift({ id: child.ids[i], start: child.start, stop: child.stop, value: child.value });
-    child = findMatchingStructureChild(child, startOffset, endOffset);
-    iter++;
-  } while (child);
-  return matches;
-};
-
-let bestStructureMatch = function(matches) {
-  for (let i = 0; i < matches.length; i++)
-    if (matches[i].stop.idx - matches[i].start.idx >= 2)
-      return [i, matches[i]];
-  return [matches.length - 1, matches[matches.length - 1]];
-};
-let bestNamedStructureMatch = function(matches) {
-  for (let i = 0; i < matches.length; i++)
-    if (matches[i].id != -1 &&
-        (matches[i].stop.idx - matches[i].start.idx) >= 2)
-      return [i, matches[i]];
-  return [matches.length - 1, matches[matches.length - 1]];
-};
-
 // Structure tree
 let _structureTreeIdx = -1;
 
