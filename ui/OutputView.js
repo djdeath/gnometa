@@ -31,11 +31,13 @@ const OutputView = new Lang.Class({
           this.set(iter, data, ['' + data]);
           return;
         }
-        for (let i = 0; i < data.length; i++) {
+        for (let i in data) {
+          if (typeof data[i] == 'function') continue;
           let iter = this.insertBefore(parent, null);
-          if (typeof data != 'object')
-            this.set(iter, data, ['' + data]);
-          else
+          if (typeof data[i] != 'object') {
+            let s = data.constructor == Array ? '' + data[i] : i + ' : ' + data[i];
+            this.set(iter, data, [s]);
+          } else
             this.render(iter, data[i]);
         }
       },
