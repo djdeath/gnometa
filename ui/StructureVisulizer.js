@@ -36,20 +36,20 @@ let _structureTreeIdx = -1;
 //
 Gtk.init(null, null);
 
+//
+let builder = Gtk.Builder.new_from_resource('/org/gnome/Gnometa/ui.ui');
+let widget = function(name) { return builder.get_object(name); };
+
 let paned = new SplitView.SplitView();
+widget('main-paned').add1(paned);
+//widget('main-paned').position = 200;
 
-let scrolled = new Gtk.ScrolledWindow();
 let textview = new TextView.TextView();
-scrolled.add(textview);
-paned.addWidget(scrolled);
+paned.addWidget(new Gtk.ScrolledWindow({ child: textview }));
 
-let popover = new Gtk.Popover({
-  position: Gtk.PositionType.BOTTOM,
-  relative_to: textview,
-});
-popover.set_size_request(400, 400);
 let popoverview = new PopoverView.PopoverView();
-popover.add(popoverview);
+let compilerview = new Gtk.ScrolledWindow({ child: popoverview })
+widget('main-paned').add2(compilerview);
 
 let structview = new OutputView.OutputView();
 paned.addWidget(structview);
@@ -123,10 +123,11 @@ textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
       let  [idx, match] = ret;
       _structureTreeIdx = idx;
       textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-      let rect = textview.getRectForRange(match.start.idx, match.stop.idx);
-      popover.pointing_to = rect;
+      //let rect = textview.getRectForRange(match.start.idx, match.stop.idx);
+      //popover.pointing_to = rect;
       popoverview.setData.apply(popoverview, ometaLabel(match.id));
-      popover.show();
+      //popover.show();
+      compilerview.show();
       structview.setData(match.value);
     }.bind(this));
   }.bind(this));
@@ -151,25 +152,21 @@ let source = Utils.loadFile(ARGV[0]);
 textview.setData(source);
 
 //
-let builder = Gtk.Builder.new_from_resource('/org/gnome/Gnometa/ui.ui');
-let widget = function(name) { return builder.get_object(name); };
-
 let win = widget('main-window');
 win.set_titlebar(widget('titlebar'));
-widget('close-button').connect('clicked', (function() { win.hide(); popover.hide(); Gtk.main_quit(); }).bind(this));
-win.connect('key-press-event', function(widget, event) {
+widget('close-button').connect('clicked', (function() { win.hide(); Gtk.main_quit(); }).bind(this));
+win.connect('key-press-event', function(w, event) {
   let keyval = event.get_keyval()[1];
   switch (keyval) {
   case Gdk.KEY_F5: paned.removeLastWidget(); break;
   case Gdk.KEY_F6: paned.addWidget(new OutputView.OutputView()); break;
   case Gdk.KEY_F7: paned.shrinkFocusedChild(10); break;
   case Gdk.KEY_F8: paned.growFocusedChild(10); break;
+  case Gdk.KEY_Escape: compilerview.hide(); break;
   }
   return false;
-});
-
-win.resize(800, 400);
-win.add(paned);
+}.bind(this));
+win.resize(800, 600);
 win.show();
 
 Gtk.main();
