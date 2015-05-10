@@ -5,7 +5,6 @@ const Gtk = imports.gi.Gtk;
 
 Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
 
-const ArrayView = imports.ArrayView;
 const OutputView = imports.OutputView;
 const PopoverView = imports.PopoverView;
 const SplitView = imports.SplitView;
