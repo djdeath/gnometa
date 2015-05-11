@@ -84,6 +84,7 @@ textview.connect('offset-changed', function(widget, offset) {
       let  [idx, match] = ret;
       _structureTreeIdx = idx;
       textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
+      popoverview.setData.apply(popoverview, ometaLabel(match.id));
       structview.setData(match.value);
     }.bind(this));
   }.bind(this));
@@ -103,6 +104,7 @@ textview.connect('selection-changed', function(widget, startOffset, endOffset) {
         return;
       }
       textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
+      popoverview.setData.apply(popoverview, ometaLabel(match.id));
       structview.setData(match.value);
     }.bind(this));
   }.bind(this));
@@ -123,10 +125,7 @@ textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
       let  [idx, match] = ret;
       _structureTreeIdx = idx;
       textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-      //let rect = textview.getRectForRange(match.start.idx, match.stop.idx);
-      //popover.pointing_to = rect;
       popoverview.setData.apply(popoverview, ometaLabel(match.id));
-      //popover.show();
       compilerview.show();
       structview.setData(match.value);
     }.bind(this));
