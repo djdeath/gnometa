@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/org/gnome/Gnometa">
-    <file preprocess="xml-stripblanks">ui.ui</file>
+    <file preprocess="xml-stripblanks">compiler-template.ui</file>
     <file preprocess="xml-stripblanks">input-template.ui</file>
     <file preprocess="xml-stripblanks">output-template.ui</file>
-    <file preprocess="xml-stripblanks">popover-template.ui</file>
+    <file preprocess="xml-stripblanks">ui.ui</file>
   </gresource>
 </gresources>

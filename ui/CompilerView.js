@@ -5,10 +5,10 @@ const Gtk = imports.gi.Gtk;
 const GtkSource = imports.gi.GtkSource;
 const TextView = imports.TextView;
 
-const PopoverView = new Lang.Class({
-  Name: 'PopoverView',
+const CompilerView = new Lang.Class({
+  Name: 'CompilerView',
   Extends: Gtk.Box,
-  Template: 'resource:///org/gnome/Gnometa/popover-template.ui',
+  Template: 'resource:///org/gnome/Gnometa/compiler-template.ui',
   InternalChildren: [ 'filename-label',
                       'plus-button',
                       'minus-button',

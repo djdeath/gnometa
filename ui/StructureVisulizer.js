@@ -5,11 +5,10 @@ const Gtk = imports.gi.Gtk;
 
 Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
 
+const CompilerView = imports.CompilerView;
 const OutputView = imports.OutputView;
-const PopoverView = imports.PopoverView;
 const SplitView = imports.SplitView;
 const TextView = imports.TextView;
-//const UiHelper = imports.UiHelper;
 const UiHelper = imports.UiHelperClient;
 const Utils = imports.Utils;
 
@@ -40,6 +39,7 @@ Gtk.init(null, null);
 let builder = Gtk.Builder.new_from_resource('/org/gnome/Gnometa/ui.ui');
 let widget = function(name) { return builder.get_object(name); };
 
+
 let paned = new SplitView.SplitView();
 widget('main-paned').add1(paned);
 //widget('main-paned').position = 200;
@@ -47,8 +47,8 @@ widget('main-paned').add1(paned);
 let textview = new TextView.TextView();
 paned.addWidget(new Gtk.ScrolledWindow({ child: textview }));
 
-let popoverview = new PopoverView.PopoverView();
-let compilerview = new Gtk.ScrolledWindow({ child: popoverview })
+let compilerview = new CompilerView.CompilerView();
+compilerview.hide();
 widget('main-paned').add2(compilerview);
 
 let structview = new OutputView.OutputView();
@@ -69,7 +69,7 @@ textview.onChange(function(text) {
   }.bind(this));
 }.bind(this));
 
-textview.connect('offset-changed', function(widget, offset) {
+textview.connect('offset-changed', function(wid, offset) {
   let data = { input: 'view0', output: 'view0', offset: { start: offset, end: offset }, };
   UiHelper.executeCommand('match-structure', data, function(error, ret) {
     if (error) {
@@ -84,12 +84,12 @@ textview.connect('offset-changed', function(widget, offset) {
       let  [idx, match] = ret;
       _structureTreeIdx = idx;
       textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-      popoverview.setData.apply(popoverview, ometaLabel(match.id));
+      compilerview.setData.apply(compilerview, ometaLabel(match.id));
       structview.setData(match.value);
     }.bind(this));
   }.bind(this));
 }.bind(this));
-textview.connect('selection-changed', function(widget, startOffset, endOffset) {
+textview.connect('selection-changed', function(wid, startOffset, endOffset) {
   let data = { input: 'view0', output: 'view0', offset: { start: startOffset, end: endOffset }, };
   UiHelper.executeCommand('match-structure', data, function(error, ret) {
     textview.removeSelection();
@@ -104,13 +104,13 @@ textview.connect('selection-changed', function(widget, startOffset, endOffset) {
         return;
       }
       textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-      popoverview.setData.apply(popoverview, ometaLabel(match.id));
+      compilerview.setData.apply(compilerview, ometaLabel(match.id));
       structview.setData(match.value);
     }.bind(this));
   }.bind(this));
 });
 
-textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
+textview.connect('alternate-menu', function(wid, startOffset, endOffset) {
   let data = { input: 'view0', output: 'view0', offset: { start: startOffset, end: endOffset }, };
   UiHelper.executeCommand('match-structure', data, function(error, ret) {
     if (error) {
@@ -125,14 +125,14 @@ textview.connect('alternate-menu', function(widget, startOffset, endOffset) {
       let  [idx, match] = ret;
       _structureTreeIdx = idx;
       textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-      popoverview.setData.apply(popoverview, ometaLabel(match.id));
+      compilerview.setData.apply(compilerview, ometaLabel(match.id));
       compilerview.show();
       structview.setData(match.value);
     }.bind(this));
   }.bind(this));
 }.bind(this));
 
-popoverview.connect('rule-move', function(widget, way) {
+compilerview.connect('rule-move', function(wid, way) {
   _structureTreeIdx += way;
   UiHelper.executeCommand('get-match', { input: 'view0', index: _structureTreeIdx }, function(error, match) {
     if (error) {
@@ -140,7 +140,7 @@ popoverview.connect('rule-move', function(widget, way) {
         return;
     }
     textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-    popoverview.setData.apply(popoverview, ometaLabel(match.id));
+    compilerview.setData.apply(compilerview, ometaLabel(match.id));
     textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
     structview.setData(match.value);
   }.bind(this));
