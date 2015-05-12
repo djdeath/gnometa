@@ -112,3 +112,22 @@ _registerCommand('translate', function(data) {
   _structures[data.output] = compiler.run(data.rule, data.input);
   return true;
 });
+
+// Find main rule & compiler variable from offset.
+_registerCommand('find-compiler', function(data) {
+  let structure = _structures[data.input];
+  let matches = _getMatchStructure(structure, data.offset.start, data.offset.end);
+  let ret = { variable: null, rule: null };
+  for (let i in matches) {
+    let val = matches[i].value;
+    if (val) {
+      if (val[1] == 'Rule')
+        ret.rule = val[2];
+      else if (val[0] == 'assignVar') {
+        ret.variable = val[1];
+        break;
+      }
+    }
+  }
+  return ret;
+});
