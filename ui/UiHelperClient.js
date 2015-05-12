@@ -49,12 +49,20 @@ readLine(Gio.DataInputStream.new(_inputStream), function(data) {
     let cmd = JSON.parse(data);
     let callback = _callbacks[cmd.id];
     delete _callbacks[cmd.id];
-    //log('answer: ' + data + ' -> ' + cmd.data);
-    if (callback)
-      callback(null, cmd.data);
-    //log(cmd.id + ' : ' + data.length);
-    else
+
+    if (!callback) {
       log('No callback for : ' + data);
+      return;
+    }
+
+    if (cmd.error) {
+      let error = new Error();
+      for (let i in cmd.error)
+        error[i] = cmd.error[i];
+      callback(error);
+    }
+    else
+        callback(null, cmd.data);
   } catch (error) {
     log('Client: ' + error);
   }
