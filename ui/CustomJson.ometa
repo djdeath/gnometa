@@ -12,13 +12,13 @@ let CustomJson = ometa(BaseStrParser) {
   array        = "[" !this.newArray():a
                  ( value:v { a.push(v); }
                    ("," value:v { a.push(v); })*
-                   | empty ) "]" {log('array: ' + a.length);}                                                        -> a,
+                   | empty ) "]"                                                     -> a,
 
   assoc        = str:k ":" value:v                                                   -> [k, v],
   object       = "{" !this.newObject():o
                  ( assoc:a { o[a[0]] = a[1]; }
                    ("," assoc:a { o[a[0]] = a[1]; })*
-                 | empty ) "}"                                                         -> o,
+                 | empty ) "}"                                                       -> o,
 
   reference    = "$" <digit+>:n                                                      -> this.getAtom(parseFloat(n)),
 
