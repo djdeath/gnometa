@@ -27,14 +27,16 @@ let _compilers = {
 };
 
 // Create a new compiler and store it.
-_registerCommand('compiler', function(data) {
+_registerCommand('compile', function(data) {
   resetSourceMap();
 
   let result = null;
+  let structure = null;
   OMeta.BSOMetaJSParser.matchAll(data.source, "topLevel", undefined, function(err, struct, tree) {
     if (err)
       throw err;
 
+    structure = struct;
     OMeta.BSOMetaJSTranslator.match(tree, "trans", undefined, function(err, struct, code) {
       if (err) {
         log("Translation error - please tell Alex about this!");
@@ -46,13 +48,17 @@ _registerCommand('compiler', function(data) {
 
   _compilers[data.name] = {
     generatedCode: result,
+    structure: structure,
     map: getSourceMap(),
-    rule: data.main.rule,
-    run: eval('(function () { return function(rule, input) { return' + data.main.variable + '.matchAll(input, rule, undefined); }; })()'),
   };
 
   // TODO: return map
-  return null;
+  return _compilers[data.name].map;
+});
+
+_registerCommand('compiler-configure', function(data) {
+  _compilers[data.name].rule = data.main.rule;
+  _compilers[data.name].run = eval(['(function () { ', result, '; return function(rule, input) { return', data.main.variable, '.matchAll(input, rule, undefined); }; })()'].join(''));
 });
 
 
