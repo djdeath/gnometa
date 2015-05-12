@@ -38,6 +38,11 @@ const CmdOptions = [
   }
 ];
 
+let repositionPanedAt = function(paned, ratio) {
+  if (paned.position == 0)
+    paned.position = paned.get_allocation().height * ratio;
+};
+
 let start = function() {
   let config = Options.parseArguments(CmdOptions, ARGV);
 
@@ -75,10 +80,8 @@ let start = function() {
   let builder = Gtk.Builder.new_from_resource('/org/gnome/Gnometa/ui.ui');
   let widget = function(name) { return builder.get_object(name); };
 
-
   let paned = new SplitView.SplitView();
   widget('main-paned').add1(paned);
-  //widget('main-paned').position = 200;
 
   let textview = new TextView.TextView();
   paned.addWidget(new Gtk.ScrolledWindow({ child: textview }));
@@ -163,6 +166,7 @@ let start = function() {
         textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
         compilerview.setData.apply(compilerview, ometaLabel(match.id));
         compilerview.show();
+        repositionPanedAt(compilerview.get_parent(), 2.0 / 3);
         structview.setData(match.value);
       }.bind(this));
     }.bind(this));
