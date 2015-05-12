@@ -6,13 +6,8 @@ let _commands = {};
 let _registerCommand = function(name, callback) { _commands[name] = callback; };
 let executeCommand = function(name, data, callback) {
   if (!_commands[name]) throw new Error('Unknown command: ' + name);
-  let ret;
-  //try {
-    ret = _commands[name](data);
-    callback(null, ret);
-  // } catch (error) {
-  //   callback(error);
-  // }
+  let ret = _commands[name](data);
+  callback(null, ret);
 };
 
 //
