@@ -113,10 +113,10 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
                  storeSomethingThatReturns:y              -> [l, 'And'].concat(xs.concat([y])),
 
   somethingThatReturns = [ :l exactly(#And) andReturn(l):ans ]    -> ans
-                       | [ :l exactly(#And) end ]                 -> [l, 'ReturnStructure', [l, 'And']]
-                       | [ :l generatesStructure:t apply(t):ans ] -> [l, 'ReturnStructure', [l, 'Store', [l].concat(ans)]]
-                       | [ :l exactly(#Set) apply(#Set):ans ]     -> [l, 'ReturnStructure', [l, 'Parenthesis', [l].concat(ans)]]
-                       | trans:x                                  -> [l, 'ReturnStructure', x],
+                       | [ :l exactly(#And) end ]                 -> [null, 'ReturnStructure', [l, 'And']]
+                       | [ :l generatesStructure:t apply(t):ans ] -> [null, 'ReturnStructure', [l, 'Store', [l].concat(ans)]]
+                       | [ :l exactly(#Set) apply(#Set):ans ]     -> [null, 'ReturnStructure', [l, 'Parenthesis', [l].concat(ans)]]
+                       | trans:x                                  -> [null, 'ReturnStructure', x],
 
   generatesStructure = #Or | #XOr | #Opt | #Many | #Many1 | #Not
                      | #Lookahead | #Form | #ConsBy | #IdxConsBy
@@ -164,7 +164,7 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
   Rule       :name
              ( somethingThatCanPass:b
                -> [null, 'ReturnStructure',
-                   [null, 'Store', b]]
+                   [b[0], 'Store', b]]
              | somethingThatReturns ):body                -> ['Rule', name, body]
 };
 BSFunctionOptimization.initialize = function() { this._locations = []; };

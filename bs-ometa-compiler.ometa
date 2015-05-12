@@ -151,7 +151,8 @@ let BSOMetaTranslator = ometa {
   ReturnStructure transFn:x                -> ['$r', this._storeVar, '.value=', x]                                       .join(''),
   Return          transFn:x                -> ['return this._forwardStructure(', x, ',', this.getLocationId(), ')']      .join(''),
   Parenthesis     transFn:x                -> ['(', x, ')']                                                              .join(''),
-  Store           transFn:x                -> ['this._appendStructure($r', this._storeVar, ',', x, ')']                  .join(''),
+  Store           transFn:x                -> ['this._appendStructure($r', this._storeVar, ',',
+                                               x, ',', this.getLocationId(), ')']                                        .join(''),
   Js              :locals transJs(locals),
   PopArg                                   -> 'this._getStructureValue(this.anything())',
 
