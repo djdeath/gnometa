@@ -61,7 +61,7 @@ let parseArguments = function(options, args) {
 
 let printHelp = function(header, options) {
   print(header + ':');
-  for (let i in options) {
+  for (let i = 0; i < options.length; i++) {
     let opt = options[i];
     let line = '\t--' + opt.name;
 
