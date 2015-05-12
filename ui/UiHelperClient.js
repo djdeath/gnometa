@@ -4,22 +4,6 @@ const Mainloop = imports.mainloop;
 const UiHelper = imports.UiHelper;
 const Utils = imports.Utils;
 
-let [success, pid, inputFd, outputFd, errorFd] =
-    GLib.spawn_async_with_pipes(null,
-                                ['./ui-helper'],
-                                [],
-                                GLib.SpawnFlags.DEFAULT,
-                                null);
-log(pid);
-log('inputFd=' + inputFd + ' outputFd=' + outputFd + ' errorFd=' + errorFd);
-
-let _inputStream = new Gio.UnixInputStream({ fd: outputFd,
-                                             close_fd: true, });
-let _outputStream = new Gio.UnixOutputStream({ fd: inputFd,
-                                               close_fd: true, });
-let _errorStream = new Gio.UnixInputStream({ fd: errorFd,
-                                             close_fd: true, });
-
 let readLine = function(stream, process) {
   stream.read_line_async(0, null, function(stream, res) {
     try {
@@ -35,6 +19,8 @@ let readLine = function(stream, process) {
   });
 };
 
+let _outputStream = null;
+
 let _cmdId = 0;
 let _callbacks = {};
 let executeCommand = function(name, data, callback) {
@@ -44,35 +30,55 @@ let executeCommand = function(name, data, callback) {
   _outputStream.write_all(JSON.stringify(cmd) + '\n', null);
 };
 
-readLine(Gio.DataInputStream.new(_inputStream), function(data) {
-  try {
-    let cmd = JSON.parse(data);
-    let callback = _callbacks[cmd.id];
-    delete _callbacks[cmd.id];
+let start = function() {
+  let [success, pid, inputFd, outputFd, errorFd] =
+      GLib.spawn_async_with_pipes(null,
+                                  ['./ui-helper'],
+                                  [],
+                                  GLib.SpawnFlags.DEFAULT,
+                                  null);
+  //log(pid);
+  //log('inputFd=' + inputFd + ' outputFd=' + outputFd + ' errorFd=' + errorFd);
 
-    if (!callback) {
-      log('No callback for : ' + data);
-      return;
-    }
+  let _inputStream = new Gio.UnixInputStream({ fd: outputFd,
+                                               close_fd: true, });
+  let _errorStream = new Gio.UnixInputStream({ fd: errorFd,
+                                               close_fd: true, });
+  _outputStream = new Gio.UnixOutputStream({ fd: inputFd,
+                                             close_fd: true, });
 
-    if (cmd.error) {
-      let error = new Error();
-      for (let i in cmd.error)
-        error[i] = cmd.error[i];
-      callback(error);
-    }
-    else
+  readLine(Gio.DataInputStream.new(_inputStream), function(data) {
+    try {
+      let cmd = JSON.parse(data);
+      let callback = _callbacks[cmd.id];
+      delete _callbacks[cmd.id];
+
+      if (!callback) {
+        log('No callback for : ' + data);
+        return;
+      }
+
+      if (cmd.error) {
+        let error = new Error();
+        for (let i in cmd.error)
+          error[i] = cmd.error[i];
+        callback(error);
+      }
+      else
         callback(null, cmd.data);
-  } catch (error) {
-    log('Client: ' + error);
-  }
-}.bind(this));
-readLine(Gio.DataInputStream.new(_errorStream), function(data) {
-  log('Server: ' + data);
-}.bind(this));
+    } catch (error) {
+      log('Client: ' + error);
+    }
+  }.bind(this));
+  readLine(Gio.DataInputStream.new(_errorStream), function(data) {
+    log('Server: ' + data);
+  }.bind(this));
+
+};
 
 const TEST = false;
 if (TEST) {
+  start();
   executeCommand('translate', { name: 'OMeta', rule: 'topLevel', input: Utils.loadFile('./CustomJson.ometa'), output: 'view0'});
   Mainloop.timeout_add(20, function() {
     executeCommand('match-structure', { input: 'view0', offset: { start: 1141, end: 1142 }});
