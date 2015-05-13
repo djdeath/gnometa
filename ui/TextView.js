@@ -27,6 +27,7 @@ const TextView = new Lang.Class({
     this.visible = true;
     this.show_line_numbers = true;
     this.following_highlight = false;
+    this.monospace = true;
     this._data = '';
 
     let lang_manager = GtkSource.LanguageManager.get_default();
