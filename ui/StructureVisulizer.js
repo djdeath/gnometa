@@ -137,11 +137,13 @@ let start = function() {
         return;
       }
       _structureTreeIdx = 0;
-      UiHelper.executeCommand('get-match', { input: 'view0', index: _structureTreeIdx }, function(error, match) {
+      UiHelper.executeCommand('get-match', { input: 'view0', index: _structureTreeIdx }, function(error, ret) {
         if (error) {
           log(error);
           return;
         }
+        let [idx, match] = ret;
+        _structureTreeIdx = idx;
         textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
         compilerview.setData.apply(compilerview, ometaLabel(match.id));
         structview.setData(match.value);
@@ -174,11 +176,13 @@ let start = function() {
 
   compilerview.connect('rule-move', function(wid, way) {
     _structureTreeIdx += way;
-    UiHelper.executeCommand('get-match', { input: 'view0', index: _structureTreeIdx }, function(error, match) {
+    UiHelper.executeCommand('get-match', { input: 'view0', index: _structureTreeIdx }, function(error, ret) {
       if (error) {
         log(error);
         return;
       }
+      let [idx, match] = ret;
+      _structureTreeIdx = idx;
       textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
       compilerview.setData.apply(compilerview, ometaLabel(match.id));
       textview.hightlightRange('highlight', match.start.idx, match.stop.idx);

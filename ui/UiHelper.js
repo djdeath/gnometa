@@ -108,7 +108,8 @@ _registerCommand('get-best-match', function(data) {
 // Get a matched structure.
 _registerCommand('get-match', function(data) {
   let matches = _matchedStructures[data.input];
-  return Utils.copyObjectBut(matches[Utils.clamp(data.index, 0, matches.length - 1)], 'children');
+  let idx = Utils.clamp(data.index, 0, matches.length - 1);
+  return [idx, Utils.copyObjectBut(matches[idx], 'children')];
 });
 
 // Translate input to output for a given compiler.
