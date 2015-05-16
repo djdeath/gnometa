@@ -21,6 +21,20 @@ let copyObjectBut = function(object, omit) {
   return ret;
 };
 
+let copyObject = function(object) {
+  let ret = {};
+  for (let i in object)
+    ret[i] = object[i];
+  return ret;
+};
+
+let copyArray = function(array) {
+  let ret = [];
+  for (let i = 0; i < array.length; i++)
+    ret[i] = array[i];
+  return ret;
+};
+
 let _stringify = function(atoms, value) {
   let serializeString = function(v) {
     if (atoms.strings[v] !== undefined)
