@@ -75,7 +75,8 @@ let _getMatchStructure = function(structure, startOffset, endOffset) {
   let iter = 0;
   do {
     for (let i = 0; i < child.ids.length; i++)
-      matches.unshift({ id: child.ids[i], start: child.start, stop: child.stop, value: child.value });
+      if (child.ids[i] != -1 && child.start.idx <= startOffset && child.stop.idx >= endOffset)
+        matches.unshift({ id: child.ids[i], start: child.start, stop: child.stop, value: child.value });
     child = _findMatchingStructureChild(child, startOffset, endOffset);
     iter++;
   } while (child);
@@ -83,8 +84,7 @@ let _getMatchStructure = function(structure, startOffset, endOffset) {
 };
 let _bestNamedStructureMatch = function(matches) {
   for (let i = 0; i < matches.length; i++)
-    if (matches[i].id != -1 &&
-        (matches[i].stop.idx - matches[i].start.idx) >= 2)
+    if ((matches[i].stop.idx - matches[i].start.idx) >= 2)
       return [i, matches[i]];
   return [matches.length - 1, matches[matches.length - 1]];
 };
