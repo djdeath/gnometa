@@ -5,6 +5,7 @@ const Gtk = imports.gi.Gtk;
 
 Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
 
+const AsyncContinuous = imports.AsyncContinuous;
 const CompilerView = imports.CompilerView;
 const OutputView = imports.OutputView;
 const SplitView = imports.SplitView;
@@ -93,8 +94,8 @@ let start = function() {
   let structview = new OutputView.OutputView();
   paned.addWidget(structview);
 
-  //
-  textview.onChange(function(text) {
+  // Translation
+  let translate = AsyncContinuous.createContinuous(function(ac, text) {
     let data = { name: 'OMeta',
                  rule: 'topLevel',
                  input: text,
@@ -102,14 +103,16 @@ let start = function() {
     UiHelper.executeCommand('translate', data, function(error, ret) {
       if (error) {
         textview.hightlightRange('error', error.idx, text.length - 1);
+        ac.done();
         return;
       }
       textview.removeHighlightRange('error');
+      ac.done();
     }.bind(this));
-  }.bind(this));
-
-  textview.connect('offset-changed', function(wid, offset) {
-    let data = { input: 'view0', output: 'view0', offset: { start: offset, end: offset }, };
+  });
+  let getBestMatch = AsyncContinuous.createContinuous(function(ac, offset) {
+    let data = { input: 'view0', output: 'view0',
+                 offset: { start: offset, end: offset }, };
     UiHelper.executeCommand('match-structure', data, function(error, ret) {
       if (error) {
         log(error);
@@ -127,9 +130,10 @@ let start = function() {
         structview.setData(match.value);
       }.bind(this));
     }.bind(this));
-  }.bind(this));
-  textview.connect('selection-changed', function(wid, startOffset, endOffset) {
-    let data = { input: 'view0', output: 'view0', offset: { start: startOffset, end: endOffset }, };
+  });
+  let selectionChanged = function(startOffset, endOffset) {
+    let data = { input: 'view0', output: 'view0',
+                 offset: { start: startOffset, end: endOffset }, };
     UiHelper.executeCommand('match-structure', data, function(error, ret) {
       textview.removeSelection();
       if (error) {
@@ -149,32 +153,23 @@ let start = function() {
         structview.setData(match.value);
       }.bind(this));
     }.bind(this));
-  });
-
-  textview.connect('alternate-menu', function(wid, startOffset, endOffset) {
-    let data = { input: 'view0', output: 'view0', offset: { start: startOffset, end: endOffset }, };
-    UiHelper.executeCommand('match-structure', data, function(error, ret) {
+  };
+  let alternateMenu = function() {
+    UiHelper.executeCommand('get-best-match', { input: 'view0' }, function(error, ret) {
       if (error) {
         log(error);
         return;
       }
-      UiHelper.executeCommand('get-best-match', { input: 'view0' }, function(error, ret) {
-        if (error) {
-          log(error);
-          return;
-        }
-        let  [idx, match] = ret;
-        _structureTreeIdx = idx;
-        textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-        compilerview.setData.apply(compilerview, ometaLabel(match.id));
-        compilerview.show();
-        repositionPanedAt(compilerview.get_parent(), 2.0 / 3);
-        structview.setData(match.value);
-      }.bind(this));
+      let  [idx, match] = ret;
+      _structureTreeIdx = idx;
+      textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
+      compilerview.setData.apply(compilerview, ometaLabel(match.id));
+      compilerview.show();
+      repositionPanedAt(compilerview.get_parent(), 2.0 / 3);
+      structview.setData(match.value);
     }.bind(this));
-  }.bind(this));
-
-  compilerview.connect('rule-move', function(wid, way) {
+  };
+  let ruleMove = function(way) {
     _structureTreeIdx += way;
     UiHelper.executeCommand('get-match', { input: 'view0', index: _structureTreeIdx }, function(error, ret) {
       if (error) {
@@ -188,6 +183,26 @@ let start = function() {
       textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
       structview.setData(match.value);
     }.bind(this));
+  };
+
+
+  textview.onChange(function(text) {
+    translate.run(text);
+  }.bind(this));
+
+  textview.connect('offset-changed', function(wid, offset) {
+    getBestMatch(offset);
+  }.bind(this));
+  textview.connect('selection-changed', function(wid, startOffset, endOffset) {
+    selectionChanged(startOffset, endOffset);
+  });
+
+  textview.connect('alternate-menu', function(wid, startOffset, endOffset) {
+    alternateMenu();
+  }.bind(this));
+
+  compilerview.connect('rule-move', function(wid, way) {
+    ruleMove(way);
   }.bind(this));
 
   //
@@ -197,12 +212,12 @@ let start = function() {
   //
   let win = widget('main-window');
   win.set_titlebar(widget('titlebar'));
-  widget('close-button').connect('clicked', (function() { win.hide(); Gtk.main_quit(); }).bind(this));
+  widget('add-button').connect('clicked', function() { paned.addWidget(new OutputView.OutputView()); }.bind(this));
+  widget('remove-button').connect('clicked', function() { paned.removeLastWidget(); }.bind(this));
+  widget('close-button').connect('clicked', function() { win.hide(); Gtk.main_quit(); }.bind(this));
   win.connect('key-press-event', function(w, event) {
     let keyval = event.get_keyval()[1];
     switch (keyval) {
-    case Gdk.KEY_F5: paned.removeLastWidget(); break;
-    case Gdk.KEY_F6: paned.addWidget(new OutputView.OutputView()); break;
     case Gdk.KEY_F7: paned.shrinkFocusedChild(10); break;
     case Gdk.KEY_F8: paned.growFocusedChild(10); break;
     case Gdk.KEY_Escape: compilerview.hide(); break;
