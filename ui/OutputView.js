@@ -3,6 +3,7 @@ const GObject = imports.gi.GObject;
 const Gio = imports.gi.Gio;
 const Gtk = imports.gi.Gtk;
 const GtkSource = imports.gi.GtkSource;
+const TextView = imports.TextView;
 const TreeView = imports.TreeView;
 
 const TEST = false
@@ -13,7 +14,7 @@ const OutputView = new Lang.Class({
   Extends: Gtk.Box,
   Template: 'resource:///org/gnome/Gnometa/output-template.ui',
   InternalChildren: [ 'output-type',
-                      'sourceview',
+                      'textview',
                       'treeview-viewport'],
 
   _init: function(args) {
@@ -43,19 +44,30 @@ const OutputView = new Lang.Class({
       },
     });
 
-    let lang_manager = GtkSource.LanguageManager.get_default();
-    this._sourceview.buffer.set_language(lang_manager.get_language('json'));
+    this._lang_manager = GtkSource.LanguageManager.get_default();
   },
 
   _renderingChanged: function() {
-    this._treeview.get_parent().visible = this._output_type.active == 0;
-    this._sourceview.get_parent().visible = this._output_type.active == 1;
+    let isString = typeof this._data === 'string';
+
+    this._output_type.sensitive = !isString;
+    this._treeview.get_parent().visible = !isString && this._output_type.active == 0;
+    this._textview.get_parent().visible = isString || this._output_type.active == 1;
   },
 
   setData: function(data) {
-    this._treeview.setData(data);
-    this._treeview.expand_all();
-    this._sourceview.buffer.set_text(JSON.stringify(data, null, 2), -1);
+    this._data = data;
+    let lang_manager = GtkSource.LanguageManager.get_default();
+    if (typeof this._data === 'string') {
+      this._textview.buffer.set_text(data, -1);
+      this._textview.buffer.set_language(lang_manager.get_language('js'));
+    } else {
+      this._treeview.setData(data);
+      this._treeview.expand_all();
+      this._textview.buffer.set_text(JSON.stringify(data, null, 2), -1);
+      this._textview.buffer.set_language(lang_manager.get_language('json'));
+    }
+    this._renderingChanged();
   },
 });
 
