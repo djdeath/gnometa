@@ -10,9 +10,6 @@ const TextView = new Lang.Class({
   Extends: GtkSource.View,
   Signals: {
     'alternate-menu': { param_types: [ GObject.TYPE_ULONG, GObject.TYPE_ULONG ] },
-    'clicked': { param_types: [ GObject.TYPE_ULONG ] },
-    'control-started': {},
-    'control-stopped': {},
     'offset-changed': { param_types: [ GObject.TYPE_ULONG ] },
     'selection-changed': { param_types: [ GObject.TYPE_ULONG, GObject.TYPE_ULONG ] },
   },
@@ -52,7 +49,6 @@ const TextView = new Lang.Class({
 
   _setInControl: function(value) {
     this._inControl = value;
-    if (value) this.emit('control-started'); else this.emit('control-stopped');
   },
   _getInControl: function() {
     return this._inControl;
