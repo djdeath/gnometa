@@ -5,6 +5,7 @@ const Gtk = imports.gi.Gtk;
 const GtkSource = imports.gi.GtkSource;
 const TextView = imports.TextView;
 const TreeView = imports.TreeView;
+const Utils = imports.Utils;
 
 const TEST = false
 if (TEST) { Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource')); }
@@ -18,7 +19,8 @@ const OutputView = new Lang.Class({
                       'treeview-viewport'],
 
   _init: function(args) {
-    this.parent(args);
+    this.parent(Utils.copyObjectBut(args, 'name'));
+    this._name = args.name;
     this._output_type.connect('notify::active', this._renderingChanged.bind(this));
     this._treeview = new TreeView.TreeView();
     this._treeview_viewport.add(this._treeview);
@@ -54,6 +56,8 @@ const OutputView = new Lang.Class({
     this._treeview.get_parent().visible = !isString && this._output_type.active == 0;
     this._textview.get_parent().visible = isString || this._output_type.active == 1;
   },
+
+  getName: function() { return this._name; },
 
   setData: function(data) {
     this._data = data;

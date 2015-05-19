@@ -7,6 +7,7 @@ Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
 
 const AsyncContinuous = imports.AsyncContinuous;
 const CompilerView = imports.CompilerView;
+const InputView = imports.InputView;
 const OutputView = imports.OutputView;
 const SplitView = imports.SplitView;
 const TextView = imports.TextView;
@@ -84,14 +85,14 @@ let start = function() {
   let paned = new SplitView.SplitView();
   widget('main-paned').add1(paned);
 
-  let textview = new TextView.TextView();
-  paned.addWidget(new Gtk.ScrolledWindow({ child: textview }));
+  let textview = new InputView.InputView({ name: 'view0' });
+  paned.addWidget(textview);
 
   let compilerview = new CompilerView.CompilerView();
   compilerview.hide();
   widget('main-paned').add2(compilerview);
 
-  let structview = new OutputView.OutputView();
+  let structview = new OutputView.OutputView({ name: 'view1' });
   paned.addWidget(structview);
 
   // Translation
@@ -110,7 +111,7 @@ let start = function() {
       ac.done();
     }.bind(this));
   });
-  let getBestMatch = AsyncContinuous.createContinuous(function(ac, offset) {
+  let getBestMatch = function(offset) {
     let data = { input: 'view0', output: 'view0',
                  offset: { start: offset, end: offset }, };
     UiHelper.executeCommand('match-structure', data, function(error, ret) {
@@ -130,7 +131,7 @@ let start = function() {
         structview.setData(match.value);
       }.bind(this));
     }.bind(this));
-  });
+  };
   let selectionChanged = function(startOffset, endOffset) {
     let data = { input: 'view0', output: 'view0',
                  offset: { start: startOffset, end: endOffset }, };
@@ -186,7 +187,7 @@ let start = function() {
   };
 
 
-  textview.onChange(function(text) {
+  textview.connect('changed', function(wid, text) {
     translate.run(text);
   }.bind(this));
 
@@ -212,7 +213,7 @@ let start = function() {
   //
   let win = widget('main-window');
   win.set_titlebar(widget('titlebar'));
-  widget('add-button').connect('clicked', function() { paned.addWidget(new OutputView.OutputView()); }.bind(this));
+  widget('add-button').connect('clicked', function() { paned.addWidget(new OutputView.OutputView({ name: 'view' + paned.nbWidgets() })); }.bind(this));
   widget('remove-button').connect('clicked', function() { paned.removeLastWidget(); }.bind(this));
   widget('close-button').connect('clicked', function() { win.hide(); Gtk.main_quit(); }.bind(this));
   win.connect('key-press-event', function(w, event) {

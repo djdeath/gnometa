@@ -164,18 +164,15 @@ const TextView = new Lang.Class({
     this.buffer.select_range(iter, iter);
   },
 
+  getData: function() {
+    return this.buffer.get_text(this.buffer.get_start_iter(),
+                                this.buffer.get_end_iter(),
+                                true);
+  },
   setData: function(data) {
     if (!(typeof data === 'string'))
       throw new Error('Cannot display an object other than a string');
     this._data = data;
     this.buffer.set_text(data, -1);
-  },
-
-  onChange: function(callback) {
-    this.buffer.connect('changed', function() {
-      callback(this.buffer.get_text(this.buffer.get_start_iter(),
-                                    this.buffer.get_end_iter(),
-                                    true));
-    }.bind(this));
   },
 });

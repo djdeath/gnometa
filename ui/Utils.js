@@ -35,6 +35,23 @@ let copyArray = function(array) {
   return ret;
 };
 
+let copyArrayRange = function(array, from, to) {
+  let ret = [], j = 0;
+  for (let i = (from ? from : 0); i < (to ? to : array.length); i++)
+    ret[j++] = array[i];
+  return ret;
+};
+
+let forwardSignal = function(from, to, signal) {
+  from.connect(signal, function() {
+    to.emit.apply(to, [signal].concat(copyArrayRange(arguments, 1)));
+  }.bind(this));
+};
+
+let forwardCall = function(from, to, func) {
+  from[func] = function() { return to[func].apply(to, arguments); };
+};
+
 let _stringify = function(atoms, value) {
   let serializeString = function(v) {
     if (atoms.strings[v] !== undefined)

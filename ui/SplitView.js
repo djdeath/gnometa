@@ -64,6 +64,7 @@ const SplitView = new Lang.Class({
     this.remove(child);
     this.queue_resize();
   },
+  nbWidgets: function() { return this._children.length; },
 
   growFocusedChild: function(value) {
     if (this._children.length < 2) return;
