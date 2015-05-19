@@ -49,6 +49,7 @@ let start = function() {
 
   readLine(Gio.DataInputStream.new(_inputStream), function(data) {
     try {
+      //log(data);
       let cmd = JSON.parse(data);
       let callback = _callbacks[cmd.id];
       delete _callbacks[cmd.id];
