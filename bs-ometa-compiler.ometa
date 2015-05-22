@@ -36,16 +36,16 @@ let BSOMetaParser = ometa(BaseStrParser) {
                  | empty                                               -> [],
   application    = "^"          name:rule args:as                      -> [@location, #App, #super, jsValue(#string, rule)].concat(as)
                  | name:grm "." name:rule args:as                      -> [@location, #App, #foreign,
-                                                                           jsCode(this.locals, [#get, grm]),
+                                                                           jsCode(@location, this.locals, [#get, grm]),
                                                                            jsValue(#string, rule)].concat(as)
                  |              name:rule args:as                      -> [@location, #App, rule].concat(as),
-  hostExpr       = BSSemActionParser.expr:r                            -> jsCode(this.locals, r),
-  curlyHostExpr  = BSSemActionParser.curlySemAction:r                  -> jsCode(this.locals, r),
-  primHostExpr   = BSSemActionParser.semAction:r                       -> jsCode(this.locals, r),
+  hostExpr       = BSSemActionParser.expr:r                            -> jsCode(@location, this.locals, r),
+  curlyHostExpr  = BSSemActionParser.curlySemAction:r                  -> jsCode(@location, this.locals, r),
+  primHostExpr   = BSSemActionParser.semAction:r                       -> jsCode(@location, this.locals, r),
   atomicHostExpr = curlyHostExpr | primHostExpr,
-  semAction      = curlyHostExpr:x
-                 | "!"  atomicHostExpr:x,
-  arrSemAction   = "->" atomicHostExpr:x,
+  semAction      = curlyHostExpr
+                 | "!"  atomicHostExpr,
+  arrSemAction   = "->" atomicHostExpr,
   semPred        = "?"  atomicHostExpr:x                               -> [@location, #Pred, x],
   expr           = expr5(true):x ("|"  expr5(true))+:xs                -> [@location, #Or,   x].concat(xs)
                  | expr5(true):x ("||" expr5(true))+:xs                -> [@location, #XOr,  x].concat(xs)
@@ -61,11 +61,11 @@ let BSOMetaParser = ometa(BaseStrParser) {
   expr4 :ne      =                expr3*:xs arrSemAction:act           -> [@location, #And].concat(xs).concat([act])
                  | ?ne            expr3+:xs                            -> [@location, #And].concat(xs)
                  | ?(ne == false) expr3*:xs                            -> [@location, #And].concat(xs),
-  optIter :x     = '*'                                                 -> [@location, #Many,  x]
-                 | '+'                                                 -> [@location, #Many1, x]
-                 | '?'                                                 -> [@location, #Opt,   x]
+  optIter :x     = '*'                                                 -> [mergeLocation(@location, x[0]), #Many,  x]
+                 | '+'                                                 -> [mergeLocation(@location, x[0]), #Many1, x]
+                 | '?'                                                 -> [mergeLocation(@location, x[0]), #Opt,   x]
                  | empty                                               -> x,
-  optBind :x     = ':' name:n                                          -> { this.locals[n] = true; [@location, #Set, n, x] }
+  optBind :x     = ':' name:n                                          -> { this.locals[n] = true; [mergeLocation(@location, x[0]), #Set, n, x] }
                  | empty                                               -> x,
   expr3          = ":" name:n                                          -> { this.locals[n] = true; [@location, #Set, n, [null, #PopArg]] }
                  | (expr2:x optIter(x) | semAction):e optBind(e)

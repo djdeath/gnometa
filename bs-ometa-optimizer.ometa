@@ -1,6 +1,11 @@
 // TODO: turn off the "seq" inliner when G.seq !== OMeta.seq (will require some refactoring)
 // TODO: add a factorizing optimization (will make jumptables more useful)
 
+let mergeLocation = function(loc1, loc2) {
+    return { start: Math.min(loc1.start, loc2.start),
+             stop: Math.max(loc1.stop, loc2.stop) };
+};
+
 let BSNullOptimization = ometa {
   setHelped = !(this._didSomething = true),
   helped    = ?this._didSomething,

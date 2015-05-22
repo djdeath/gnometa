@@ -232,4 +232,4 @@ let jsAtLocation = function(location, locals, expr) {
   return [location, #Js, locals, expr];
 };
 let jsValue = function(type, value) { return jsAtLocation(null, {}, [type, value]); };
-let jsCode = function(locals, expr) { return jsAtLocation(null, copyObject(locals), expr); };
+let jsCode = function(location, locals, expr) { return jsAtLocation(location, copyObject(locals), expr); };
