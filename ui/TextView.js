@@ -9,7 +9,6 @@ const TextView = new Lang.Class({
   Name: 'TextView',
   Extends: GtkSource.View,
   Signals: {
-    'alternate-menu': { param_types: [ GObject.TYPE_ULONG, GObject.TYPE_ULONG ] },
     'offset-changed': { param_types: [ GObject.TYPE_ULONG ] },
     'selection-changed': { param_types: [ GObject.TYPE_ULONG, GObject.TYPE_ULONG ] },
   },
@@ -62,7 +61,6 @@ const TextView = new Lang.Class({
     let keyval = event.get_keyval()[1];
     switch (keyval) {
     case Gdk.KEY_Control_L: this._setInControl(true); break;
-    case Gdk.KEY_Alt_L: case Gdk.KEY_Shift_R: this._emitSignalOnMenu('alternate-menu'); break;
     }
     return false;
   },

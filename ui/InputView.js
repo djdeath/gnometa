@@ -10,7 +10,6 @@ const InputView = new Lang.Class({
   Name: 'InputView',
   Extends: Gtk.ScrolledWindow,
   Signals: {
-    'alternate-menu': { param_types: [ GObject.TYPE_ULONG, GObject.TYPE_ULONG ] },
     'changed': { param_types: [ GObject.TYPE_STRING ] },
     'offset-changed': { param_types: [ GObject.TYPE_ULONG ] },
     'selection-changed': { param_types: [ GObject.TYPE_ULONG, GObject.TYPE_ULONG ] },
@@ -22,7 +21,6 @@ const InputView = new Lang.Class({
     this._textview = new TextView.TextView();
     this.add(this._textview);
     this.visible = true;
-    Utils.forwardSignal(this._textview, this, 'alternate-menu');
     Utils.forwardSignal(this._textview, this, 'offset-changed');
     Utils.forwardSignal(this._textview, this, 'selection-changed');
     Utils.forwardCall(this, this._textview, 'hightlightRange');

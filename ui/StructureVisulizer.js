@@ -198,10 +198,6 @@ let start = function() {
     selectionChanged(startOffset, endOffset);
   });
 
-  textview.connect('alternate-menu', function(wid, startOffset, endOffset) {
-    alternateMenu();
-  }.bind(this));
-
   compilerview.connect('rule-move', function(wid, way) {
     ruleMove(way);
   }.bind(this));
@@ -222,6 +218,7 @@ let start = function() {
     case Gdk.KEY_F7: paned.shrinkFocusedChild(10); break;
     case Gdk.KEY_F8: paned.growFocusedChild(10); break;
     case Gdk.KEY_Escape: compilerview.hide(); break;
+    case Gdk.KEY_Alt_L: alternateMenu(); break;
     }
     return false;
   }.bind(this));
