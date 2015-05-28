@@ -298,8 +298,9 @@ let OMeta = {
   _structureLocation: function(input) {
     return { idx: input.idx };
   },
-  _startStructure: function(id) {
+  _startStructure: function(id, rule) {
     return {
+      rule: rule,
       ids: [id],
       start: this._structureLocation(this.input),
       stop: null,

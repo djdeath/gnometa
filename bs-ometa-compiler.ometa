@@ -160,7 +160,7 @@ let BSOMetaTranslator = ometa {
                     this._storeVar = 0; }
              trans:body                    -> ['\n"', name, '":function(){var $elf=this,',
                                                '$vars={},',
-                                               '$r0=this._startStructure(', this.getLocationId(), ');', body,
+                                               '$r0=this._startStructure(', this.getLocationId(), ', true);', body,
                                                ';return this._endStructure($r0);}']                                      .join(''),
   Grammar    :sName
              { this.sName = sName; this._locations = []; }
