@@ -5,5 +5,6 @@
     <file preprocess="xml-stripblanks">input-template.ui</file>
     <file preprocess="xml-stripblanks">output-template.ui</file>
     <file preprocess="xml-stripblanks">ui.ui</file>
+    <file alias="match-tree-view.css">match-tree-view.css</file>
   </gresource>
 </gresources>

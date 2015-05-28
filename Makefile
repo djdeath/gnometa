@@ -38,7 +38,7 @@ ui/CustomJson.js: ometa-base.ometa ui/CustomJson.ometa $(OMETA_RUNTIME)
 
 standalone: ui/standalone.js ui/CustomJson.js
 
-ui/org.gnome.Gnometa.gresource: ui/org.gnome.Gnometa.gresource.xml ui/*.ui
+ui/org.gnome.Gnometa.gresource: ui/org.gnome.Gnometa.gresource.xml ui/*.ui ui/*.css
 	$(OO) $(GCR) --sourcedir=ui ui/org.gnome.Gnometa.gresource.xml
 
 ui: standalone ui/org.gnome.Gnometa.gresource

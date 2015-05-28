@@ -1,0 +1,15 @@
+#main-box GtkButton {
+    background-image: none;
+    font-size: 8px;
+    padding: 2px;
+    border: 0px;
+}
+
+#main-box GtkButton:hover {
+    background-image: none;
+    background-color: #4a90d9;
+}
+
+#main-box {
+    padding: 10px;
+}

@@ -13,15 +13,9 @@ let inputDataStream = Gio.DataInputStream.new(inputStream);
 
 let handleCommand = function(cmd) {
   try {
-    UiHelper.executeCommand(cmd.op, cmd.data, function(error, data) {
-      if (error) {
-        delete cmd.data;
-        cmd.error = error;
-        cmd.error.message = error.message;
-      } else
-        cmd.data = data;
-      outpuStream.write_all(JSON.stringify(cmd) + '\n', null);
-    }.bind(this));
+    let data = UiHelper.executeCommand(cmd.op, cmd.data);
+    cmd.data = data;
+    outpuStream.write_all(JSON.stringify(cmd) + '\n', null);
   } catch (error) {
     cmd.data = null;
     cmd.error = { message: error.message }

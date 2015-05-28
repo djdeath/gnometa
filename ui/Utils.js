@@ -8,8 +8,18 @@ let loadFile = function(path) {
   return '' + source;
 };
 
+let loadURI = function(uri) {
+  let file = Gio.File.new_for_uri(uri);
+  let [, source] = file.load_contents(null);
+  return '' + source;
+};
+
 let clamp = function(value, min, max) {
   return Math.max(Math.min(value, max), min);
+};
+
+let includes = function(value, min, max) {
+  return value >= min && value <= max;
 };
 
 let copyObjectBut = function(object, omit) {

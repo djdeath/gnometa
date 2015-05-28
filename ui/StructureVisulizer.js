@@ -8,6 +8,7 @@ Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
 const AsyncContinuous = imports.AsyncContinuous;
 const CompilerView = imports.CompilerView;
 const InputView = imports.InputView;
+const MatchTreeView = imports.MatchTreeView;
 const OutputView = imports.OutputView;
 const SplitView = imports.SplitView;
 const TextView = imports.TextView;
@@ -40,9 +41,13 @@ const CmdOptions = [
   }
 ];
 
-let repositionPanedAt = function(paned, ratio) {
-  if (paned.position == 0)
-    paned.position = paned.get_allocation().height * ratio;
+let repositionPanedAt = function(paned, ratio, param) {
+  if (paned.position == 0) {
+    let alloc = paned.get_allocation();
+    if (alloc.width == alloc.height == 1)
+      alloc = paned.get_parent().get_allocation();
+    paned.position = alloc[param] * ratio;
+  }
 };
 
 let start = function() {
@@ -66,10 +71,24 @@ let start = function() {
     return _ometaFiles[filename].slice(start, stop).trim();
   };
 
-  let ometaLabel = function(id) {
+  let ometaFile = function(id) {
+    if (id < 0) return null;
+    let sitem = OMetaMap.map[id];
+    return OMetaMap.filenames[sitem[0]];
+  };
+
+  let ometaRange = function(id) {
+    if (id < 0) return [0, 0];
     let sitem = OMetaMap.map[id];
     let filename = OMetaMap.filenames[sitem[0]];
-    return [filename, Utils.loadFile('../' + filename), sitem[1], sitem[2]];
+    return [sitem[1], sitem[2]];
+  };
+
+  let ometaText = function(id) {
+    if (id < 0) return '';
+    let sitem = OMetaMap.map[id];
+    let filename = OMetaMap.filenames[sitem[0]];
+    return Utils.loadFile('../' + filename).slice(sitem[1], sitem[2]);
   };
 
   // Structure tree
@@ -83,17 +102,29 @@ let start = function() {
   let widget = function(name) { return builder.get_object(name); };
 
   let paned = new SplitView.SplitView();
+  widget('main-paned').remove(widget('main-paned').get_child1());
   widget('main-paned').add1(paned);
 
   let textview = new InputView.InputView({ name: 'view0' });
   paned.addWidget(textview);
 
+  let matchtreeview = new MatchTreeView.MatchTreeView();
+  widget('compiler-paned').add1(matchtreeview);
+
   let compilerview = new CompilerView.CompilerView();
-  compilerview.hide();
-  widget('main-paned').add2(compilerview);
+  widget('compiler-paned').add2(compilerview);
 
   let structview = new OutputView.OutputView({ name: 'view1' });
   paned.addWidget(structview);
+
+  //
+  let compilerArgs = function(highlightId, hintId) {
+    let ret = [ometaFile(highlightId),
+               Utils.loadFile('../' + ometaFile(highlightId))].concat(ometaRange(highlightId));
+    if (hintId && ret[0] === ometaFile(hintId))
+      return ret.concat(ometaRange(hintId));
+    return ret.concat([0, 0]);
+  };
 
   // Translation
   let translate = AsyncContinuous.createContinuous(function(ac, text) {
@@ -127,9 +158,16 @@ let start = function() {
         let  [idx, match] = ret;
         _structureTreeIdx = idx;
         textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-        compilerview.setData.apply(compilerview, ometaLabel(match.id));
+        compilerview.setData.apply(compilerview, compilerArgs(match.id));
         structview.setData(match.value);
       }.bind(this));
+    }.bind(this));
+    UiHelper.executeCommand('get-structure', data, function(error, ret) {
+      if (error) {
+        log(error);
+        return;
+      }
+      matchtreeview.setData(ret, ometaText);
     }.bind(this));
   };
   let selectionChanged = function(startOffset, endOffset) {
@@ -150,42 +188,23 @@ let start = function() {
         let [idx, match] = ret;
         _structureTreeIdx = idx;
         textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-        compilerview.setData.apply(compilerview, ometaLabel(match.id));
+        compilerview.setData.apply(compilerview, compilerArgs(match.id));
         structview.setData(match.value);
       }.bind(this));
     }.bind(this));
+    UiHelper.executeCommand('get-structure', data, function(error, ret) {
+      if (error) {
+        log(error);
+        return;
+      }
+      matchtreeview.setData(ret, ometaText);
+    }.bind(this));
   };
   let alternateMenu = function() {
-    UiHelper.executeCommand('get-best-match', { input: 'view0' }, function(error, ret) {
-      if (error) {
-        log(error);
-        return;
-      }
-      let  [idx, match] = ret;
-      _structureTreeIdx = idx;
-      textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-      compilerview.setData.apply(compilerview, ometaLabel(match.id));
-      compilerview.show();
-      repositionPanedAt(compilerview.get_parent(), 2.0 / 3);
-      structview.setData(match.value);
-    }.bind(this));
+    compilerview.get_parent().show();
+    repositionPanedAt(compilerview.get_parent().get_parent(), 2.0 / 3, 'height');
+    repositionPanedAt(compilerview.get_parent(), 1.0 / 2, 'width');
   };
-  let ruleMove = function(way) {
-    _structureTreeIdx += way;
-    UiHelper.executeCommand('get-match', { input: 'view0', index: _structureTreeIdx }, function(error, ret) {
-      if (error) {
-        log(error);
-        return;
-      }
-      let [idx, match] = ret;
-      _structureTreeIdx = idx;
-      textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-      compilerview.setData.apply(compilerview, ometaLabel(match.id));
-      textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
-      structview.setData(match.value);
-    }.bind(this));
-  };
-
 
   textview.connect('changed', function(wid, text) {
     translate.run(text);
@@ -198,9 +217,23 @@ let start = function() {
     selectionChanged(startOffset, endOffset);
   });
 
-  compilerview.connect('rule-move', function(wid, way) {
-    ruleMove(way);
-  }.bind(this));
+  matchtreeview.onHover(function(structure) {
+    textview.removeSelection();
+    textview.hightlightRange('highlight', structure.start.idx, structure.stop.idx);
+    compilerview.setData.apply(compilerview, compilerArgs(structure.id,
+                                                          structure.call));
+    structview.setData(structure.value);
+  });
+  matchtreeview.onClick(function(structure) {
+    textview.removeSelection();
+    textview.hightlightRange('highlight', structure.start.idx, structure.stop.idx);
+    if (structure.call)
+      compilerview
+    compilerview.setData.apply(compilerview, compilerArgs(structure.id,
+                                                          structure.call));
+    structview.setData(structure.value);
+    matchtreeview.setData(structure, ometaText);
+  });
 
   //
   let source = Utils.loadFile(config.options.input);
@@ -217,7 +250,7 @@ let start = function() {
     switch (keyval) {
     case Gdk.KEY_F7: paned.shrinkFocusedChild(10); break;
     case Gdk.KEY_F8: paned.growFocusedChild(10); break;
-    case Gdk.KEY_Escape: compilerview.hide(); break;
+    case Gdk.KEY_Escape: compilerview.get_parent().hide(); break;
     case Gdk.KEY_Alt_L: alternateMenu(); break;
     }
     return false;

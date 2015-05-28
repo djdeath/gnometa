@@ -4,6 +4,8 @@ const GObject = imports.gi.GObject;
 const Gdk = imports.gi.Gdk;
 const Gtk = imports.gi.Gtk;
 const GtkSource = imports.gi.GtkSource;
+const Pango = imports.gi.Pango;
+const Utils = imports.Utils;
 
 const TextView = new Lang.Class({
   Name: 'TextView',
@@ -14,8 +16,12 @@ const TextView = new Lang.Class({
   },
 
   _colors: {
-    'highlight': 'lightblue',
-    'error': 'red',
+    'highlight': { name: 'highlight',
+                   background: 'lightblue' },
+    'hint': { name: 'hint',
+              weight: Pango.Weight.BOLD },
+    'error': { name: 'error',
+               background: 'red' },
   },
 
   _init: function() {
@@ -32,7 +38,7 @@ const TextView = new Lang.Class({
     this._tagsOffsets = {}
     let tag_table = this.buffer.get_tag_table();
     for (let i in this._colors) {
-      let tag = new Gtk.TextTag({ name: i, background: this._colors[i], });
+      let tag = new Gtk.TextTag(this._colors[i]);
       tag_table.add(tag);
       this._tagsOffsets[i] = { start: 0, end: 0 };
     }
@@ -89,7 +95,12 @@ const TextView = new Lang.Class({
     let highlight = this._getRange('highlight');
     let rect1 = this.get_iter_location(this._iterAtOffset(highlight.start)),
         rect2 = this.get_iter_location(this._iterAtOffset(highlight.end));
-    this.vadjustment.value = (rect1.y + rect2.y) / 2 - this.vadjustment.page_increment / 2;
+    let visible = [this.vadjustment.value, this.vadjustment.value + this.vadjustment.page_size];
+    if (!Utils.includes(rect1.y, visible[0], visible[1]) ||
+        !Utils.includes(rect1.y + rect1.height, visible[0], visible[1]) ||
+        !Utils.includes(rect2.y, visible[0], visible[1]) ||
+        !Utils.includes(rect2.y + rect2.height, visible[0], visible[1]))
+      this.vadjustment.value = (rect1.y + rect2.y) / 2 - this.vadjustment.page_increment / 2;
   },
 
   _emitSignalOnSelection: function(signal) {

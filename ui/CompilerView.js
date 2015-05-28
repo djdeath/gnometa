@@ -10,12 +10,7 @@ const CompilerView = new Lang.Class({
   Extends: Gtk.Box,
   Template: 'resource:///org/gnome/Gnometa/compiler-template.ui',
   InternalChildren: [ 'filename-label',
-                      'plus-button',
-                      'minus-button',
                       'sourceview-scrollview'],
-  Signals: {
-    'rule-move': { param_types: [ GObject.TYPE_INT ] },
-  },
 
   _init: function(args) {
     this.parent(args);
@@ -24,12 +19,9 @@ const CompilerView = new Lang.Class({
     this._sourceview = new TextView.TextView();
     this._sourceview.following_highlight = true;
     this._sourceview_scrollview.add(this._sourceview);
-
-    this._plus_button.connect('clicked', function() { this.emit('rule-move', 1); }.bind(this));
-    this._minus_button.connect('clicked', function() { this.emit('rule-move', -1); }.bind(this));
   },
 
-  setData: function(filename, data, start, end) {
+  setData: function(filename, data, hstart, hend, istart, iend) {
     let textChanged = false;
     if (filename != this._filename_label.label) {
       this._filename_label.label = filename;
@@ -37,6 +29,7 @@ const CompilerView = new Lang.Class({
       textChanged = true;
     }
 
-    this._sourceview.hightlightRange('highlight', start, end);
+    this._sourceview.hightlightRange('highlight', hstart, hend);
+    this._sourceview.hightlightRange('hint', istart, iend);
   },
 });

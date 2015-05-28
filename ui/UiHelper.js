@@ -4,14 +4,9 @@ const Utils = imports.Utils;
 //
 let _commands = {};
 let _registerCommand = function(name, callback) { _commands[name] = callback; };
-let executeCommand = function(name, data, callback) {
-  try {
-    if (!_commands[name]) throw new Error('Unknown command: ' + name);
-    let ret = _commands[name](data);
-    callback(null, ret);
-  } catch (error) {
-    callback(error);
-  }
+let executeCommand = function(name, data) {
+  if (!_commands[name]) throw new Error('Unknown command: ' + name);
+  return _commands[name](data);
 };
 
 //
@@ -74,9 +69,8 @@ let _getMatchStructure = function(structure, startOffset, endOffset) {
   let matches = [], child = structure;
   let iter = 0;
   do {
-    for (let i = 0; i < child.ids.length; i++)
-      if (child.ids[i] != -1 && child.start.idx <= startOffset && child.stop.idx >= endOffset)
-        matches.unshift({ id: child.ids[i], start: child.start, stop: child.stop, value: child.value });
+    if (child.id != -1 && child.start.idx <= startOffset && child.stop.idx >= endOffset)
+      matches.unshift({ id: child.id, start: child.start, stop: child.stop, value: child.value });
     child = _findMatchingStructureChild(child, startOffset, endOffset);
     iter++;
   } while (child);
@@ -88,6 +82,19 @@ let _bestNamedStructureMatch = function(matches) {
       return [i, matches[i]];
   return [matches.length - 1, matches[matches.length - 1]];
 };
+let _findStructure = function(structure, startOffset, endOffset) {
+  if (structure.start.idx == startOffset || structure.stop.idx == endOffset)
+    return structure;
+  if (structure.start.idx > startOffset || structure.stop.idx < endOffset)
+    return null;
+
+  for (let i = 0; i < structure.children.length; i++) {
+    let child = _findStructure(structure.children[i], startOffset, endOffset);
+    if (child)
+      return child;
+  }
+  return structure;
+}
 
 let _structures = {};
 let _matchedStructures = {};
@@ -110,6 +117,11 @@ _registerCommand('get-match', function(data) {
   let matches = _matchedStructures[data.input];
   let idx = Utils.clamp(data.index, 0, matches.length - 1);
   return [idx, Utils.copyObjectBut(matches[idx], 'children')];
+});
+
+// Get structure on a given range.
+_registerCommand('get-structure', function(data) {
+  return _findStructure(_structures[data.input], data.offset.start, data.offset.end);
 });
 
 // Translate input to output for a given compiler.
