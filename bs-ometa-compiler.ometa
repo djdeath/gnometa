@@ -90,9 +90,7 @@ let BSOMetaParser = ometa(BaseStrParser) {
                                                          ),
   grammar        = keyword('ometa') ( "(" name:sni ")" -> sni
                                     | empty -> 'OMeta' ):sn
-  "{" enum(#rule, ','):rs "}"                                             BSOMetaOptimizer.optimizeGrammar(
-                                                                            [#Grammar, sn].concat(rs)
-                                                                          )
+                   "{" enum(#rule, ','):rs "}"                         -> [#OMetaGrammar, sn, rs]
 };
 BSOMetaParser.hexDigits = "0123456789abcdef";
 
@@ -163,7 +161,7 @@ let BSOMetaTranslator = ometa {
                                                '$r0=this._startStructure(', this.getLocationId(), ', true);', body,
                                                ';return this._endStructure($r0);}']                                      .join(''),
   Grammar    :sName
-             { this.sName = sName; this._locations = []; }
+             { this.sName = sName; }
              trans*:rules                  -> ['objectThatDelegatesTo(', sName, ',{', rules.join(','), '})'].join(''),
 
   intPart  = [:mode transFn:part]          -> (mode.toProgramString()  + "," + part),
@@ -210,4 +208,7 @@ BSOMetaTranslator.popLocation = function() {
 };
 BSOMetaTranslator.getLocationId = function() {
   return this._locations[this._locations.length - 1];
+};
+BSOMetaTranslator.initialize = function() {
+  this._locations = [];
 };

@@ -4,5 +4,7 @@ let BSOMetaJSParser = ometa(BSJSParser) {
 };
 
 let BSOMetaJSTranslator = ometa(BSJSTranslator) {
-  Grammar = BSOMetaTranslator.Grammar
+  OMetaGrammar :sn :rules
+               BSOMetaOptimizer.optimizeGrammar([#Grammar, sn].concat(rules)):o
+               BSOMetaTranslator.trans([{}].concat(o))
 };
