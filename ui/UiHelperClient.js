@@ -69,6 +69,7 @@ let start = function() {
         callback(null, cmd.data);
     } catch (error) {
       log('Client: ' + error);
+      log(error.stack);
     }
   }.bind(this));
   readLine(Gio.DataInputStream.new(_errorStream), function(data) {
