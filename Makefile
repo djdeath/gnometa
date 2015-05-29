@@ -28,6 +28,8 @@ GCR = $(OO) echo " GLIB_COMPILE_RESOURCES " $@; glib-compile-resources
 
 gen: $(OMETA_STEP_GEN)
 
+commit: $(OMETA_GEN)
+
 ui/standalone.js: $(OMETA_SOURCES) $(OMETA_RUNTIME)
 	$(OO) $(OMETA) -b $(OMETA_SOURCES) -s $@.map -o $@
 
@@ -41,7 +43,8 @@ ui/org.gnome.Gnometa.gresource: ui/org.gnome.Gnometa.gresource.xml ui/*.ui
 
 ui: standalone ui/org.gnome.Gnometa.gresource
 
-commit: $(OMETA_GEN)
+wc:
+	$(OO) wc -l $(OMETA_SOURCES) $(OMETA_RUNTIME)
 
 install:
 	$(OO) test -n "$(PREFIX)" || (echo "No prefix given, please define PREFIX" && false)
