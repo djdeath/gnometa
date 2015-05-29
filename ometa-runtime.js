@@ -301,7 +301,7 @@ let OMeta = {
   _startStructure: function(id, rule) {
     return {
       rule: rule,
-      ids: [id],
+      id: id,
       start: this._structureLocation(this.input),
       stop: null,
       children: [],
@@ -309,11 +309,13 @@ let OMeta = {
     };
   },
   _appendStructure: function(structure, child, id) {
-    let s = { ids: [id],
+    let s = { id: id,
               start: child.start,
               stop: child.stop,
               children: [child],
               value: child.value };
+    if (!child.call)
+      child.call = id;
     structure.children.push(s);
     return (structure.value = s.value);
   },
@@ -326,19 +328,10 @@ let OMeta = {
   },
   _endStructure: function(structure) {
     structure.stop = this._structureLocation(this.input);
-    if (structure.children.length == 1) {
-      let child = structure.children[0];
-      if (child.single && this._structureMatches(structure, child)) {
-        structure.ids.concat(child.ids);
-        structure.children = [];
-        structure.single = true;
-      }
-    } else if (structure.children.length == 0)
-      structure.single = true;
     return structure;
   },
   _forwardStructure: function(structure, id) {
-    structure.ids.unshift(id);
+    structure.call = id;
     return structure;
   },
 
