@@ -26,6 +26,13 @@ const CmdOptions = [
     help: 'Compiler to use',
   },
   {
+    name: 'entry-point',
+    shortName: 'e',
+    requireArgument: true,
+    defaultValue: null,
+    help: 'Entry point for the compiler to use',
+  },
+  {
     name: 'input',
     shortName: 'i',
     requireArgument: true,
@@ -50,6 +57,11 @@ let repositionPanedAt = function(paned, ratio, param) {
   }
 };
 
+let printError = function(error) {
+  log(error);
+  log(error.stack);
+};
+
 let start = function() {
   let config = Options.parseArguments(CmdOptions, ARGV);
 
@@ -58,38 +70,38 @@ let start = function() {
     return -1;
   }
 
+  if (config.options.compiler && !config.options['entry-point']) {
+    print('Cannot use custom compiler without an entry point');
+    return -1;
+  }
+
   UiHelper.start();
 
   // Source mapping
-  const OMetaMap = JSON.parse(Utils.loadFile('standalone.js.map'));
-
-  let _ometaFiles = {};
-  let ometaCode = function(filename, start, stop) {
-    if (!_ometaFiles[filename]) {
-      _ometaFiles[filename] = Utils.loadFile('../' + filename);
-    }
-    return _ometaFiles[filename].slice(start, stop).trim();
-  };
+  let OMetaMap = null;
 
   let ometaFile = function(id) {
     if (id < 0) return null;
     let sitem = OMetaMap.map[id];
-    return OMetaMap.filenames[sitem[0]];
+    let filename = OMetaMap.filenames[sitem[0]];
+    return config.options.compiler ? filename : ('../' + filename);
   };
 
   let ometaRange = function(id) {
     if (id < 0) return [0, 0];
     let sitem = OMetaMap.map[id];
-    let filename = OMetaMap.filenames[sitem[0]];
     return [sitem[1], sitem[2]];
   };
 
   let ometaText = function(id) {
     if (id < 0) return '';
-    let sitem = OMetaMap.map[id];
-    let filename = OMetaMap.filenames[sitem[0]];
-    return Utils.loadFile('../' + filename).slice(sitem[1], sitem[2]);
+    let range = ometaRange(id);
+    return Utils.loadFile(ometaFile(id)).slice(range[0], range[1]);
   };
+
+  let source = Utils.loadFile(config.options.input);
+  let compilerName = config.options.compiler ? 'view0' : 'OMeta';
+  let compilerRule = config.options.compiler ? config.options['entry-point'].split('.')[1] : 'topLevel';
 
   // Structure tree
   let _structureTreeIdx = -1;
@@ -120,7 +132,7 @@ let start = function() {
   //
   let compilerArgs = function(highlightId, hintId) {
     let ret = [ometaFile(highlightId),
-               Utils.loadFile('../' + ometaFile(highlightId))].concat(ometaRange(highlightId));
+               Utils.loadFile(ometaFile(highlightId))].concat(ometaRange(highlightId));
     if (hintId && ret[0] === ometaFile(hintId))
       return ret.concat(ometaRange(hintId));
     return ret.concat([0, 0]);
@@ -128,12 +140,13 @@ let start = function() {
 
   // Translation
   let translate = AsyncContinuous.createContinuous(function(ac, text) {
-    let data = { name: 'OMeta',
-                 rule: 'topLevel',
+    let data = { name: compilerName,
+                 rule: compilerRule,
                  input: text,
                  output: 'view0', };
     UiHelper.executeCommand('translate', data, function(error, ret) {
       if (error) {
+        printError(error);
         textview.hightlightRange('error', error.idx, text.length - 1);
         ac.done();
         return;
@@ -146,15 +159,9 @@ let start = function() {
     let data = { input: 'view0', output: 'view0',
                  offset: { start: offset, end: offset }, };
     UiHelper.executeCommand('match-structure', data, function(error, ret) {
-      if (error) {
-        log(error);
-        return;
-      }
+      if (error) return printError(error);
       UiHelper.executeCommand('get-best-match', { input: 'view0' }, function(error, ret) {
-        if (error) {
-          log(error);
-          return;
-        }
+        if (error) return printError(error);
         let  [idx, match] = ret;
         _structureTreeIdx = idx;
         textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
@@ -163,10 +170,7 @@ let start = function() {
       }.bind(this));
     }.bind(this));
     UiHelper.executeCommand('get-structure', data, function(error, ret) {
-      if (error) {
-        log(error);
-        return;
-      }
+      if (error) return printError(error);
       matchtreeview.setData(ret, ometaText);
     }.bind(this));
   };
@@ -175,16 +179,10 @@ let start = function() {
                  offset: { start: startOffset, end: endOffset }, };
     UiHelper.executeCommand('match-structure', data, function(error, ret) {
       textview.removeSelection();
-      if (error) {
-        log(error);
-        return;
-      }
+      if (error) return printError(error);
       _structureTreeIdx = 0;
       UiHelper.executeCommand('get-match', { input: 'view0', index: _structureTreeIdx }, function(error, ret) {
-        if (error) {
-          log(error);
-          return;
-        }
+        if (error) return printError(error);
         let [idx, match] = ret;
         _structureTreeIdx = idx;
         textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
@@ -193,10 +191,7 @@ let start = function() {
       }.bind(this));
     }.bind(this));
     UiHelper.executeCommand('get-structure', data, function(error, ret) {
-      if (error) {
-        log(error);
-        return;
-      }
+      if (error) return printError(error);
       matchtreeview.setData(ret, ometaText);
     }.bind(this));
   };
@@ -205,6 +200,9 @@ let start = function() {
     repositionPanedAt(compilerview.get_parent().get_parent(), 2.0 / 3, 'height');
     repositionPanedAt(compilerview.get_parent(), 1.0 / 2, 'width');
   };
+
+  //
+  textview.setData(source);
 
   textview.connect('changed', function(wid, text) {
     translate.run(text);
@@ -235,9 +233,31 @@ let start = function() {
     matchtreeview.setData(structure, ometaText);
   });
 
-  //
-  let source = Utils.loadFile(config.options.input);
-  textview.setData(source);
+  {
+    let data = { input: config.options.compiler ? Utils.loadFile(config.options.compiler) : null,
+                 name: compilerName };
+    UiHelper.executeCommand('compile', data, function(error, ret) {
+      if (error) return printError(error);
+
+      OMetaMap = ret;
+      if (config.options.compiler)
+        OMetaMap.filenames[0] = config.options.compiler;
+      else {
+        // Using OMeta.
+        translate.run(source);
+        return;
+      }
+
+      delete data.input;
+      let entryPoint = config.options['entry-point'].split('.');
+      data.main = { rule: entryPoint[1], variable: entryPoint[0] };
+      UiHelper.executeCommand('compiler-configure', data, function(error, ret) {
+        if (error) return printError(error);
+        translate.run(source);
+      });
+    });
+  }
+
 
   //
   let win = widget('main-window');

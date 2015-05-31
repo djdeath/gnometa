@@ -687,3 +687,7 @@ let OMeta = {
     return m;
   }
 };
+
+let evalCompiler = function(str) {
+  return eval(str);
+};

@@ -18,7 +18,7 @@ let handleCommand = function(cmd) {
     outpuStream.write_all(JSON.stringify(cmd) + '\n', null);
   } catch (error) {
     cmd.data = null;
-    cmd.error = { message: error.message }
+    cmd.error = { message: error.message, stack: error.stack, idx: error.idx }
     outpuStream.write_all(JSON.stringify(cmd) + '\n', null);
   }
 };

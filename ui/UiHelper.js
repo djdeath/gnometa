@@ -23,11 +23,16 @@ let _compilers = {
 
 // Create a new compiler and store it.
 _registerCommand('compile', function(data) {
-  resetSourceMap();
+  OMeta.resetSourceMap();
+
+  if (data.name == 'OMeta')
+    return _compilers[data.name].map;
+
+  OMeta.startFileSourceMap(null);
 
   let result = null;
   let structure = null;
-  OMeta.BSOMetaJSParser.matchAll(data.source, "topLevel", undefined, function(err, struct, tree) {
+  OMeta.BSOMetaJSParser.matchAll(data.input, "topLevel", undefined, function(err, struct, tree) {
     if (err)
       throw err;
 
@@ -44,16 +49,22 @@ _registerCommand('compile', function(data) {
   _compilers[data.name] = {
     generatedCode: result,
     structure: structure,
-    map: getSourceMap(),
+    map: OMeta.getSourceMap(),
   };
 
-  // TODO: return map
   return _compilers[data.name].map;
 });
 
 _registerCommand('compiler-configure', function(data) {
+  if (!_compilers[data.name])
+    throw new Error('Compiler ' + data.name + ' does not exist');
   _compilers[data.name].rule = data.main.rule;
-  _compilers[data.name].run = eval(['(function () { ', result, '; return function(rule, input) { return', data.main.variable, '.matchAll(input, rule, undefined); }; })()'].join(''));
+  _compilers[data.name].run =
+    OMeta.evalCompiler(['(function () { ',
+                        _compilers[data.name].generatedCode,
+                        '; return function(rule, input) { return ',
+                        data.main.variable,
+                        '.matchAllStructure(input, rule, undefined); }; })()'].join(''));
 });
 
 
