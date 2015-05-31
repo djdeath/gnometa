@@ -54,6 +54,7 @@ install:
 
 clean:
 	$(OO) rm -f $(OMETA_STEP_GEN)
+	$(OO) rm -f *~ ui/*~
 
 reset:
 	git checkout -f $(OMETA_GEN)
