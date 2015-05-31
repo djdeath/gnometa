@@ -241,7 +241,7 @@ let start = function() {
 
       OMetaMap = ret;
       if (config.options.compiler)
-        OMetaMap.filenames[0] = config.options.compiler;
+        OMetaMap.filenames[OMetaMap.filenames.length - 1] = config.options.compiler;
       else {
         // Using OMeta.
         translate.run(source);

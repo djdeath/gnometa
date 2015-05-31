@@ -23,31 +23,24 @@ let _compilers = {
 
 // Create a new compiler and store it.
 _registerCommand('compile', function(data) {
-  OMeta.resetSourceMap();
-
   if (data.name == 'OMeta')
     return _compilers[data.name].map;
 
-  OMeta.startFileSourceMap(null);
+  OMeta.resetSourceMap();
 
-  let result = null;
-  let structure = null;
-  OMeta.BSOMetaJSParser.matchAll(data.input, "topLevel", undefined, function(err, struct, tree) {
-    if (err)
-      throw err;
 
-    structure = struct;
-    OMeta.BSOMetaJSTranslator.match(tree, "trans", undefined, function(err, struct, code) {
-      if (err) {
-        log("Translation error - please tell Alex about this!");
-        throw err;
-      }
-      result = code;
-    });
-  });
+  let baseFile = '../ometa-base.ometa'
+  OMeta.startFileSourceMap(baseFile);
+  let baseCode =
+      OMeta.BSOMetaJSTranslator.match(
+        OMeta.BSOMetaJSParser.matchAll(Utils.loadFile(baseFile), 'topLevel', undefined),
+        'trans', undefined);
+  OMeta.startFileSourceMap('');
+  let structure = OMeta.BSOMetaJSParser.matchAllStructure(data.input, 'topLevel', undefined);
+  let code = OMeta.BSOMetaJSTranslator.match(structure.value, 'trans', undefined);
 
   _compilers[data.name] = {
-    generatedCode: result,
+    generatedCode: baseCode + '\n' + code,
     structure: structure,
     map: OMeta.getSourceMap(),
   };
