@@ -309,15 +309,10 @@ let OMeta = {
     };
   },
   _appendStructure: function(structure, child, id) {
-    let s = { id: id,
-              start: child.start,
-              stop: child.stop,
-              children: [child],
-              value: child.value };
     if (!child.call)
       child.call = id;
-    structure.children.push(s);
-    return (structure.value = s.value);
+    structure.children.push(child);
+    return (structure.value = child.value);
   },
   _getStructureValue: function(structure) {
     return structure.value;
