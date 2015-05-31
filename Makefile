@@ -33,10 +33,7 @@ commit: $(OMETA_GEN)
 ui/standalone.js: $(OMETA_SOURCES) $(OMETA_RUNTIME)
 	$(OO) $(OMETA) -b $(OMETA_SOURCES) -s $@.map -o $@
 
-ui/CustomJson.js: ometa-base.ometa ui/CustomJson.ometa $(OMETA_RUNTIME)
-	$(OO) $(OMETA) -b ometa-base.ometa ui/CustomJson.ometa -o $@
-
-standalone: ui/standalone.js ui/CustomJson.js
+standalone: ui/standalone.js
 
 ui/org.gnome.Gnometa.gresource: ui/org.gnome.Gnometa.gresource.xml ui/*.ui ui/*.css
 	$(OO) $(GCR) --sourcedir=ui ui/org.gnome.Gnometa.gresource.xml
@@ -45,6 +42,9 @@ ui: standalone ui/org.gnome.Gnometa.gresource
 
 wc:
 	$(OO) wc -l $(OMETA_SOURCES) $(OMETA_RUNTIME)
+
+wc-ui:
+	$(OO) wc -l ui/[A-Z]*.js
 
 install:
 	$(OO) test -n "$(PREFIX)" || (echo "No prefix given, please define PREFIX" && false)
