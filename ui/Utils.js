@@ -65,3 +65,8 @@ let forwardSignal = function(from, to, signal) {
 let forwardCall = function(from, to, func) {
   from[func] = function() { return to[func].apply(to, arguments); };
 };
+
+let printError = function(error) {
+  log(error);
+  log(error.stack);
+};

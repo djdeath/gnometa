@@ -57,11 +57,6 @@ let repositionPanedAt = function(paned, ratio, param) {
   }
 };
 
-let printError = function(error) {
-  log(error);
-  log(error.stack);
-};
-
 let start = function() {
   let config = Options.parseArguments(CmdOptions, ARGV);
 
@@ -142,7 +137,7 @@ let start = function() {
   let translate = AsyncContinuous.createContinuous(function(ac, text) {
     UiHelper.commands.translate(compilerName, text, compilerRule, 'view0', function(error, ret) {
       if (error) {
-        printError(error);
+        Utils.printError(error);
         textview.hightlightRange('error', error.idx, text.length - 1);
         ac.done();
         return;
@@ -153,9 +148,9 @@ let start = function() {
   });
   let getBestMatch = function(offset) {
     UiHelper.commands.matchStructure('view0', offset, offset, 'view0', function(error, ret) {
-      if (error) return printError(error);
+      if (error) return Utils.printError(error);
       UiHelper.commands.getBestMatch('view0', function(error, ret) {
-        if (error) return printError(error);
+        if (error) return Utils.printError(error);
         let  [idx, match] = ret;
         _structureTreeIdx = idx;
         textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
@@ -164,17 +159,17 @@ let start = function() {
       }.bind(this));
     }.bind(this));
     UiHelper.commands.getStructure('view0', offset, offset, function(error, ret) {
-      if (error) return printError(error);
+      if (error) return Utils.printError(error);
       matchtreeview.setData(ret, ometaText);
     }.bind(this));
   };
   let selectionChanged = function(startOffset, endOffset) {
     UiHelper.commands.matchStructure('view0', startOffset, endOffset, 'view0', function(error, ret) {
       textview.removeSelection();
-      if (error) return printError(error);
+      if (error) return Utils.printError(error);
       _structureTreeIdx = 0;
       UiHelper.commands.getMatch('view0', _structureTreeIdx, function(error, ret) {
-        if (error) return printError(error);
+        if (error) return Utils.printError(error);
         let [idx, match] = ret;
         _structureTreeIdx = idx;
         textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
@@ -183,7 +178,7 @@ let start = function() {
       }.bind(this));
     }.bind(this));
     UiHelper.commands.getStructure('view0', startOffset, endOffset, function(error, ret) {
-      if (error) return printError(error);
+      if (error) return Utils.printError(error);
       matchtreeview.setData(ret, ometaText);
     }.bind(this));
   };
@@ -228,7 +223,7 @@ let start = function() {
   {
     let input = config.options.compiler ? Utils.loadFile(config.options.compiler) : null;
     UiHelper.commands.compile(compilerName, input, function(error, ret) {
-      if (error) return printError(error);
+      if (error) return Utils.printError(error);
 
       OMetaMap = ret;
       if (config.options.compiler)
@@ -241,7 +236,7 @@ let start = function() {
 
       let entryPoint = config.options['entry-point'].split('.');
       UiHelper.commands.compilerConfigure(compilerName, entryPoint[0], entryPoint[1], function(error, ret) {
-        if (error) return printError(error);
+        if (error) return Utils.printError(error);
         translate.run(source);
       });
     });

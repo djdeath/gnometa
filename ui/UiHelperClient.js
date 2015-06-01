@@ -70,10 +70,7 @@ let start = function() {
       let callback = _callbacks[cmd.id];
       delete _callbacks[cmd.id];
 
-      if (!callback) {
-        log('No callback for : ' + data);
-        return;
-      }
+      if (!callback) return Utils.printError('No callback for : ' + data);
 
       if (cmd.error) {
         let error = new Error();

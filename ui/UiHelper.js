@@ -29,10 +29,10 @@ commands.compile = function(name, input) {
 
   let baseFile = '../ometa-base.ometa'
   OMeta.startFileSourceMap(baseFile);
-  let baseCode =
-      OMeta.BSOMetaJSTranslator.match(
-        OMeta.BSOMetaJSParser.matchAll(Utils.loadFile(baseFile), 'topLevel', undefined),
-        'trans', undefined);
+  let baseCode = OMeta.BSOMetaJSTranslator.match(
+    OMeta.BSOMetaJSParser.matchAll(Utils.loadFile(baseFile),
+                                   'topLevel', undefined),
+    'trans', undefined);
   OMeta.startFileSourceMap('');
   let structure = OMeta.BSOMetaJSParser.matchAllStructure(input, 'topLevel', undefined);
   let code = OMeta.BSOMetaJSTranslator.match(structure.value, 'trans', undefined);
