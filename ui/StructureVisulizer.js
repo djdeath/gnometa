@@ -140,11 +140,7 @@ let start = function() {
 
   // Translation
   let translate = AsyncContinuous.createContinuous(function(ac, text) {
-    let data = { name: compilerName,
-                 rule: compilerRule,
-                 input: text,
-                 output: 'view0', };
-    UiHelper.executeCommand('translate', data, function(error, ret) {
+    UiHelper.commands.translate(compilerName, text, compilerRule, 'view0', function(error, ret) {
       if (error) {
         printError(error);
         textview.hightlightRange('error', error.idx, text.length - 1);
@@ -156,11 +152,9 @@ let start = function() {
     }.bind(this));
   });
   let getBestMatch = function(offset) {
-    let data = { input: 'view0', output: 'view0',
-                 offset: { start: offset, end: offset }, };
-    UiHelper.executeCommand('match-structure', data, function(error, ret) {
+    UiHelper.commands.matchStructure('view0', offset, offset, 'view0', function(error, ret) {
       if (error) return printError(error);
-      UiHelper.executeCommand('get-best-match', { input: 'view0' }, function(error, ret) {
+      UiHelper.commands.getBestMatch('view0', function(error, ret) {
         if (error) return printError(error);
         let  [idx, match] = ret;
         _structureTreeIdx = idx;
@@ -169,19 +163,17 @@ let start = function() {
         structview.setData(match.value);
       }.bind(this));
     }.bind(this));
-    UiHelper.executeCommand('get-structure', data, function(error, ret) {
+    UiHelper.commands.getStructure('view0', offset, offset, function(error, ret) {
       if (error) return printError(error);
       matchtreeview.setData(ret, ometaText);
     }.bind(this));
   };
   let selectionChanged = function(startOffset, endOffset) {
-    let data = { input: 'view0', output: 'view0',
-                 offset: { start: startOffset, end: endOffset }, };
-    UiHelper.executeCommand('match-structure', data, function(error, ret) {
+    UiHelper.commands.matchStructure('view0', startOffset, endOffset, 'view0', function(error, ret) {
       textview.removeSelection();
       if (error) return printError(error);
       _structureTreeIdx = 0;
-      UiHelper.executeCommand('get-match', { input: 'view0', index: _structureTreeIdx }, function(error, ret) {
+      UiHelper.commands.getMatch('view0', _structureTreeIdx, function(error, ret) {
         if (error) return printError(error);
         let [idx, match] = ret;
         _structureTreeIdx = idx;
@@ -190,7 +182,7 @@ let start = function() {
         structview.setData(match.value);
       }.bind(this));
     }.bind(this));
-    UiHelper.executeCommand('get-structure', data, function(error, ret) {
+    UiHelper.commands.getStructure('view0', startOffset, endOffset, function(error, ret) {
       if (error) return printError(error);
       matchtreeview.setData(ret, ometaText);
     }.bind(this));
@@ -234,9 +226,8 @@ let start = function() {
   });
 
   {
-    let data = { input: config.options.compiler ? Utils.loadFile(config.options.compiler) : null,
-                 name: compilerName };
-    UiHelper.executeCommand('compile', data, function(error, ret) {
+    let input = config.options.compiler ? Utils.loadFile(config.options.compiler) : null;
+    UiHelper.commands.compile(compilerName, input, function(error, ret) {
       if (error) return printError(error);
 
       OMetaMap = ret;
@@ -248,10 +239,8 @@ let start = function() {
         return;
       }
 
-      delete data.input;
       let entryPoint = config.options['entry-point'].split('.');
-      data.main = { rule: entryPoint[1], variable: entryPoint[0] };
-      UiHelper.executeCommand('compiler-configure', data, function(error, ret) {
+      UiHelper.commands.compilerConfigure(compilerName, entryPoint[0], entryPoint[1], function(error, ret) {
         if (error) return printError(error);
         translate.run(source);
       });

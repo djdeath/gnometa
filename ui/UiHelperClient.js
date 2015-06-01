@@ -4,12 +4,17 @@ const Mainloop = imports.mainloop;
 const UiHelper = imports.UiHelper;
 const Utils = imports.Utils;
 
-let readLine = function(stream, process) {
+const _DEBUG_IO = false;
+let _debugIo = function(pre, data) {
+  if (_DEBUG_IO) log(pre + data);
+};
+
+let _readLine = function(stream, process) {
   stream.read_line_async(0, null, function(stream, res) {
     try {
       let [data, length] = stream.read_line_finish(res);
       if (length > 0) {
-        readLine(stream, process);
+        _readLine(stream, process);
         process(data);
       } else
         log('Server gone');
@@ -19,27 +24,38 @@ let readLine = function(stream, process) {
   });
 };
 
-let _outputStream = null;
-
 let _cmdId = 0;
 let _callbacks = {};
-let executeCommand = function(name, data, callback) {
-  let cmd = { id: _cmdId++, op: name, data: data, };
-  _callbacks[cmd.id] = callback;
-  //log('execute cmd: ' + JSON.stringify(cmd));
-  _outputStream.write_all(JSON.stringify(cmd) + '\n', null);
+let _outputStream = null;
+let commands = {};
+
+let _generateIpc = function(name, callback) {
+  return function() {
+    if ((arguments.length - 1) != callback.length)
+      throw new Error('Invalid number of arguments for ' + name +
+                      ' : ' + arguments.length +
+                      ' expected ' + callback.length);
+
+    let args = [];
+    for (let i = 0; i < (arguments.length - 1); i++)
+      args.push(arguments[i]);
+    let cmd = { id: _cmdId++, op: name, data: args };
+    _callbacks[cmd.id] = arguments[arguments.length - 1];
+    _debugIo('OUT: ', JSON.stringify(cmd));
+    _outputStream.write_all(JSON.stringify(cmd) + '\n', null);
+  };
 };
 
 let start = function() {
+  for (let i in UiHelper.commands)
+    commands[i] = _generateIpc(i, UiHelper.commands[i]);
+
   let [success, pid, inputFd, outputFd, errorFd] =
       GLib.spawn_async_with_pipes(null,
                                   ['./ui-helper'],
                                   [],
                                   GLib.SpawnFlags.DEFAULT,
                                   null);
-  //log(pid);
-  //log('inputFd=' + inputFd + ' outputFd=' + outputFd + ' errorFd=' + errorFd);
-
   let _inputStream = new Gio.UnixInputStream({ fd: outputFd,
                                                close_fd: true, });
   let _errorStream = new Gio.UnixInputStream({ fd: errorFd,
@@ -47,9 +63,9 @@ let start = function() {
   _outputStream = new Gio.UnixOutputStream({ fd: inputFd,
                                              close_fd: true, });
 
-  readLine(Gio.DataInputStream.new(_inputStream), function(data) {
+  _readLine(Gio.DataInputStream.new(_inputStream), function(data) {
     try {
-      //log(data);
+      _debugIo('IN: ', data);
       let cmd = JSON.parse(data);
       let callback = _callbacks[cmd.id];
       delete _callbacks[cmd.id];
@@ -72,7 +88,7 @@ let start = function() {
       log(error.stack);
     }
   }.bind(this));
-  readLine(Gio.DataInputStream.new(_errorStream), function(data) {
+  _readLine(Gio.DataInputStream.new(_errorStream), function(data) {
     log('Server: ' + data);
   }.bind(this));
 

@@ -2,11 +2,10 @@ const OMeta = imports.standalone;
 const Utils = imports.Utils;
 
 //
-let _commands = {};
-let _registerCommand = function(name, callback) { _commands[name] = callback; };
+let commands = {};
 let executeCommand = function(name, data) {
-  if (!_commands[name]) throw new Error('Unknown command: ' + name);
-  return _commands[name](data);
+  if (!commands[name]) throw new Error('Unknown command: ' + name);
+  return commands[name](data);
 };
 
 //
@@ -22,12 +21,11 @@ let _compilers = {
 };
 
 // Create a new compiler and store it.
-_registerCommand('compile', function(data) {
-  if (data.name == 'OMeta')
-    return _compilers[data.name].map;
+commands.compile = function(name, input) {
+  if (name == 'OMeta')
+    return _compilers[name].map;
 
   OMeta.resetSourceMap();
-
 
   let baseFile = '../ometa-base.ometa'
   OMeta.startFileSourceMap(baseFile);
@@ -36,29 +34,29 @@ _registerCommand('compile', function(data) {
         OMeta.BSOMetaJSParser.matchAll(Utils.loadFile(baseFile), 'topLevel', undefined),
         'trans', undefined);
   OMeta.startFileSourceMap('');
-  let structure = OMeta.BSOMetaJSParser.matchAllStructure(data.input, 'topLevel', undefined);
+  let structure = OMeta.BSOMetaJSParser.matchAllStructure(input, 'topLevel', undefined);
   let code = OMeta.BSOMetaJSTranslator.match(structure.value, 'trans', undefined);
 
-  _compilers[data.name] = {
+  _compilers[name] = {
     generatedCode: baseCode + '\n' + code,
     structure: structure,
     map: OMeta.getSourceMap(),
   };
 
-  return _compilers[data.name].map;
-});
+  return _compilers[name].map;
+};
 
-_registerCommand('compiler-configure', function(data) {
-  if (!_compilers[data.name])
-    throw new Error('Compiler ' + data.name + ' does not exist');
-  _compilers[data.name].rule = data.main.rule;
-  _compilers[data.name].run =
+commands.compilerConfigure = function(name, variable, rule) {
+  if (!_compilers[name])
+    throw new Error('Compiler ' + name + ' does not exist');
+  _compilers[name].rule = rule;
+  _compilers[name].run =
     OMeta.evalCompiler(['(function () { ',
-                        _compilers[data.name].generatedCode,
+                        _compilers[name].generatedCode,
                         '; return function(rule, input) { return ',
-                        data.main.variable,
+                        variable,
                         '.matchAllStructure(input, rule, undefined); }; })()'].join(''));
-});
+};
 
 
 let _findMatchingStructureChild = function(parent, startOffset, endOffset) {
@@ -103,42 +101,42 @@ let _findStructure = function(structure, startOffset, endOffset) {
 let _structures = {};
 let _matchedStructures = {};
 // Match a structre given a particular region.
-_registerCommand('match-structure', function(data) {
-  let structure = _structures[data.input];
-  let matches = _getMatchStructure(structure, data.offset.start, data.offset.end);
-  _matchedStructures[data.output] = matches;
+commands.matchStructure = function(input, start, end, output) {
+  let structure = _structures[input];
+  let matches = _getMatchStructure(structure, start, end);
+  _matchedStructures[output] = matches;
   return matches.length;
-});
+};
 
 // Get the best match.
-_registerCommand('get-best-match', function(data) {
-  let ret = _bestNamedStructureMatch(_matchedStructures[data.input]);
+commands.getBestMatch = function(input) {
+  let ret = _bestNamedStructureMatch(_matchedStructures[input]);
   return [ret[0], Utils.copyObjectBut(ret[1], 'children')];
-});
+};
 
 // Get a matched structure.
-_registerCommand('get-match', function(data) {
-  let matches = _matchedStructures[data.input];
-  let idx = Utils.clamp(data.index, 0, matches.length - 1);
+commands.getMatch = function(input, index) {
+  let matches = _matchedStructures[input];
+  let idx = Utils.clamp(index, 0, matches.length - 1);
   return [idx, Utils.copyObjectBut(matches[idx], 'children')];
-});
+};
 
 // Get structure on a given range.
-_registerCommand('get-structure', function(data) {
-  return _findStructure(_structures[data.input], data.offset.start, data.offset.end);
-});
+commands.getStructure = function(input, start, end) {
+  return _findStructure(_structures[input], start, end);
+};
 
 // Translate input to output for a given compiler.
-_registerCommand('translate', function(data) {
-  let compiler = _compilers[data.name];
-  _structures[data.output] = compiler.run(data.rule, data.input);
+commands.translate = function(name, input, rule, output) {
+  let compiler = _compilers[name];
+  _structures[output] = compiler.run(rule, input);
   return true;
-});
+};
 
 // Find main rule & compiler variable from offset.
-_registerCommand('find-compiler', function(data) {
-  let structure = _structures[data.input];
-  let matches = _getMatchStructure(structure, data.offset.start, data.offset.end);
+commands.findCompiler = function(input, start, end) {
+  let structure = _structures[input];
+  let matches = _getMatchStructure(structure, start, end);
   let ret = { variable: null, rule: null };
   for (let i in matches) {
     let val = matches[i].value;
@@ -152,4 +150,4 @@ _registerCommand('find-compiler', function(data) {
     }
   }
   return ret;
-});
+};

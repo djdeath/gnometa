@@ -13,7 +13,7 @@ let inputDataStream = Gio.DataInputStream.new(inputStream);
 
 let handleCommand = function(cmd) {
   try {
-    let data = UiHelper.executeCommand(cmd.op, cmd.data);
+    let data = UiHelper.commands[cmd.op].apply(this, cmd.data);
     cmd.data = data;
     outpuStream.write_all(JSON.stringify(cmd) + '\n', null);
   } catch (error) {
