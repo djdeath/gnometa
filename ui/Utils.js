@@ -23,8 +23,13 @@ let includes = function(value, min, max) {
 
 let copyObjectBut = function(object, omit) {
   let ret = {};
+  let omits = {};
+  if (typeof omit === 'string')
+    omits[omit] = true;
+  else
+    omits = omit;
   for (let i in object) {
-    if (i != omit)
+    if (!omits[i])
       ret[i] = object[i];
   }
   return ret;

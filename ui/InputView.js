@@ -16,9 +16,9 @@ const InputView = new Lang.Class({
   },
 
   _init: function(args) {
-    this.parent(Utils.copyObjectBut(args, 'name'));
+    this.parent(Utils.copyObjectBut(args, { name: true, language: true }));
     this._name = args.name;
-    this._textview = new TextView.TextView();
+    this._textview = new TextView.TextView({ language: args.language });
     this.add(this._textview);
     this.visible = true;
     Utils.forwardSignal(this._textview, this, 'offset-changed');

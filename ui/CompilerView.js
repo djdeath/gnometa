@@ -29,7 +29,7 @@ const CompilerView = new Lang.Class({
       textChanged = true;
     }
 
-    this._sourceview.hightlightRange('highlight', hstart, hend);
     this._sourceview.hightlightRange('hint', istart, iend);
+    this._sourceview.hightlightRange('alt-highlight', hstart, hend);
   },
 });

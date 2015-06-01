@@ -117,7 +117,7 @@ let start = function() {
   widget('main-paned').remove(widget('main-paned').get_child1());
   widget('main-paned').add1(paned);
 
-  let textview = new InputView.InputView({ name: 'view0' });
+  let textview = new InputView.InputView({ name: 'view0', language: 'js' });
   paned.addWidget(textview);
 
   let matchtreeview = new MatchTreeView.MatchTreeView();

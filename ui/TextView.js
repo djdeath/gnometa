@@ -18,22 +18,25 @@ const TextView = new Lang.Class({
   _colors: {
     'highlight': { name: 'highlight',
                    background: 'lightblue' },
+    'alt-highlight': { name: 'alt-highlight',
+                       background: '#fde5f6' },
     'hint': { name: 'hint',
               weight: Pango.Weight.BOLD },
     'error': { name: 'error',
                background: 'red' },
   },
 
-  _init: function() {
-    this.parent();
+  _init: function(args) {
+    this.parent(Utils.copyObjectBut(args, 'language'));
     this.visible = true;
     this.show_line_numbers = true;
     this.following_highlight = false;
     this.monospace = true;
     this._data = '';
+    this._lastHighlight = 'highlight';
 
-    let lang_manager = GtkSource.LanguageManager.get_default();
-    this.buffer.set_language(lang_manager.get_language('js'));
+    if (args)
+      this.language = args.language;
 
     this._tagsOffsets = {}
     let tag_table = this.buffer.get_tag_table();
@@ -50,6 +53,18 @@ const TextView = new Lang.Class({
     this.connect('button-release-event', this._buttonReleased.bind(this));
     this.connect('motion-notify-event', this._motionNotified.bind(this));
     this.connect('size-allocate', this._sizeAllocated.bind(this));
+  },
+
+  get language() {
+    let lang = this.buffer.get_language();
+    if (!lang) return '';
+    lang.get_id();
+  },
+
+  set language(v) {
+    if (!v) return;
+    let lang_manager = GtkSource.LanguageManager.get_default();
+    this.buffer.set_language(lang_manager.get_language(v));
   },
 
   _setInControl: function(value) {
@@ -92,7 +107,7 @@ const TextView = new Lang.Class({
   },
 
   _scrollToHighlight: function() {
-    let highlight = this._getRange('highlight');
+    let highlight = this._getRange(this._lastHighlight);
     let rect1 = this.get_iter_location(this._iterAtOffset(highlight.start)),
         rect2 = this.get_iter_location(this._iterAtOffset(highlight.end));
     let visible = [this.vadjustment.value, this.vadjustment.value + this.vadjustment.page_size];
@@ -109,12 +124,6 @@ const TextView = new Lang.Class({
         endOffset = end_iter.get_offset();
     if (startOffset != endOffset)
       this.emit(signal, startOffset, endOffset);
-  },
-
-  _emitSignalOnMenu: function(signal) {
-    let highlight = this._getRange('highlight');
-    if (highlight.start != highlight.end)
-      this.emit(signal, highlight.start, highlight.end);
   },
 
   getOffsetAtLocation: function(x, y) {
@@ -145,6 +154,7 @@ const TextView = new Lang.Class({
     return this.buffer.get_iter_at_offset(offset);
   },
   _highlightRange: function(name, start, end) {
+    this._tagsOffsets[name] = { start: start, end: end };
     this.buffer.apply_tag_by_name(name,
                                   this._iterAtOffset(start),
                                   this._iterAtOffset(end));
@@ -160,6 +170,7 @@ const TextView = new Lang.Class({
     highlight.start = start;
     highlight.end = end;
     this._highlightRange(name, highlight.start, highlight.end);
+    this._lastHighlight = name;
     if (this.following_highlight)
       this._scrollToHighlight();
   },
