@@ -94,7 +94,9 @@ const StructureView = new Lang.Class({
   },
 
   _createButton: function(tree) {
-    let button = new Gtk.Button({ label: this._text(tree.id), visible: true });
+    let text = this._text(tree.id);
+    text = text == 'token' ? tree.value : text;
+    let button = new Gtk.Button({ label: text, visible: true });
     this.add(button);
     button.get_style_context().add_provider(this._cssProvider, 1000);
     button.connect('enter-notify-event', function() { this._emit('hover', tree); }.bind(this));
