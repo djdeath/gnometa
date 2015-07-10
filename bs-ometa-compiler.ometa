@@ -14,7 +14,6 @@ let BSSemActionParser = ometa(BSJSParser) {
 };
 
 let BSOMetaParser = ometa(BaseStrParser) {
-  enum :r :d     = listOf(r, d):v ("," | empty) -> v,
   space          = ^space | fromTo('//', '\n') | fromTo('/*', '*/'),
   nameFirst      = '_' | '$' | letter,
   nameRest       = nameFirst | digit,
