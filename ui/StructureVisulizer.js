@@ -30,7 +30,7 @@ const CmdOptions = [
     shortName: 'e',
     requireArgument: true,
     defaultValue: null,
-    help: 'Entry point for the compiler to use',
+    help: 'Entry point for the compiler to use (Grammar.Rule)',
   },
   {
     name: 'input',
