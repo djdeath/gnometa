@@ -15,25 +15,26 @@ let parseArguments = function(options, args) {
   }
 
   let isValue = false, lastOption = null;
-  for (let i in args) {
+  for (let i = 1; i < args.length; i++) {
+    let arg = args[i];
     if (lastOption) {
       if (lastOption.allowMultiple) {
         if (!result.options[lastOption.name])
           result.options[lastOption.name] = []
-        result.options[lastOption.name].push(args[i]);
+        result.options[lastOption.name].push(arg);
       } else
-        result.options[lastOption.name] = args[i];
+        result.options[lastOption.name] = arg;
       lastOption = null;
       continue;
     }
 
     let match;
-    //log("looking at : '" + args[i] + "'");
-    if ((match = /^--([\w-]+)(=(.*))?$/.exec(args[i])) == null &&
-        (match = /^-([\w-])(=(.*))?$/.exec(args[i])) == null) {
-      if (args[i][0] == '-')
-        throw new Error('Unknown option ' + args[i]);
-      result.arguments.push(args[i]);
+    //log("looking at : '" + arg + "'");
+    if ((match = /^--([\w-]+)(=(.*))?$/.exec(arg)) == null &&
+        (match = /^-([\w-])(=(.*))?$/.exec(arg)) == null) {
+      if (arg[0] == '-')
+        throw new Error('Unknown option ' + arg);
+      result.arguments.push(arg);
       continue;
     }
 
