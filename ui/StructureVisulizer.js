@@ -94,7 +94,9 @@ let start = function() {
     return Utils.loadFile(ometaFile(id)).slice(range[0], range[1]);
   };
 
-  let source = Utils.loadFile(config.options.input);
+  let source = '';
+  if (config.options.input)
+      source = Utils.loadFile(config.options.input);
   let compilerName = config.options.compiler ? 'view0' : 'OMeta';
   let compilerRule = config.options.compiler ? config.options['entry-point'].split('.')[1] : 'topLevel';
 
