@@ -198,7 +198,7 @@ let getTag = (function() {
 
 // the failure exception
 if (!window._OMetafail) {
-  window._OMetafail = new Error();
+  window._OMetafail = new Error('match failed');
   window._OMetafail.toString = function() { return "match failed"; };
 }
 let fail = window._OMetafail;
