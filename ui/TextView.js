@@ -166,10 +166,8 @@ const TextView = new Lang.Class({
   },
   hightlightRange: function(name, start, end) {
     let highlight = this._getRange(name);
-    this._unhighlightRange(name, 0, this._data.length);
-    highlight.start = start;
-    highlight.end = end;
-    this._highlightRange(name, highlight.start, highlight.end);
+    this._unhighlightRange(name, highlight.start, highlight.end);
+    this._highlightRange(name, start, end);
     this._lastHighlight = name;
     if (this.following_highlight)
       this._scrollToHighlight();
@@ -178,6 +176,10 @@ const TextView = new Lang.Class({
     let highlight = this._getRange(name);
     this._unhighlightRange(name, highlight.start, highlight.end);
     highlight.start = highlight.end = 0;
+  },
+  removeAllHighlight: function() {
+    for (let i in this._colors)
+      this.removeHighlightRange(i);
   },
   removeSelection: function() {
     let iter = this.buffer.get_iter_at_offset(0);
@@ -193,6 +195,7 @@ const TextView = new Lang.Class({
     if (!(typeof data === 'string'))
       throw new Error('Cannot display an object other than a string');
     this._data = data;
+    this.removeAllHighlight();
     this.buffer.set_text(data, -1);
   },
 });

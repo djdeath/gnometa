@@ -24,6 +24,7 @@ const InputView = new Lang.Class({
     Utils.forwardSignal(this._textview, this, 'offset-changed');
     Utils.forwardSignal(this._textview, this, 'selection-changed');
     Utils.forwardCall(this, this._textview, 'hightlightRange');
+    Utils.forwardCall(this, this._textview, 'removeAllHighlight');
     Utils.forwardCall(this, this._textview, 'removeHighlightRange');
     Utils.forwardCall(this, this._textview, 'removeSelection');
     Utils.forwardCall(this, this._textview, 'getData');
@@ -34,4 +35,6 @@ const InputView = new Lang.Class({
   },
 
   getName: function() { return this._name; },
+
+  setSensitive: function(value) { this._textview.sensitive = value; },
 });

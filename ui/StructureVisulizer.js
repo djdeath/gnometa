@@ -140,11 +140,12 @@ let start = function() {
     UiHelper.commands.translate(compilerName, text, compilerRule, 'view0', function(error, ret) {
       if (error) {
         Utils.printError(error);
+        textview.removeAllHighlight();
         textview.hightlightRange('error', error.idx, text.length - 1);
         ac.done();
         return;
       }
-      textview.removeHighlightRange('error');
+      textview.removeAllHighlight();
       ac.done();
     }.bind(this));
   });
@@ -204,6 +205,7 @@ let start = function() {
     selectionChanged(startOffset, endOffset);
   });
 
+  //
   matchtreeview.onHover(function(structure) {
     textview.removeSelection();
     textview.hightlightRange('highlight', structure.start.idx, structure.stop.idx);
@@ -222,28 +224,41 @@ let start = function() {
     matchtreeview.setData(structure, ometaText);
   });
 
-  {
-    let input = config.options.compiler ? Utils.loadFile(config.options.compiler) : null;
-    UiHelper.commands.compile(compilerName, input, function(error, ret) {
+  //
+  let rebuildCompiler = function(text) {
+    textview.setSensitive(false);
+    let finish = function(error) {
+      textview.setSensitive(true);
       if (error) return Utils.printError(error);
+    };
+    UiHelper.commands.compile(compilerName, text, function(error, ret) {
+      if (error) return finish(error);
 
       OMetaMap = ret;
       if (config.options.compiler)
         OMetaMap.filenames[OMetaMap.filenames.length - 1] = config.options.compiler;
       else {
         // Using OMeta.
-        translate.run(source);
+        translate.run(textview.getData());
+        finish();
         return;
       }
 
       let entryPoint = config.options['entry-point'].split('.');
       UiHelper.commands.compilerConfigure(compilerName, entryPoint[0], entryPoint[1], function(error, ret) {
-        if (error) return Utils.printError(error);
-        translate.run(source);
+        if (error) return finish(error);
+        translate.run(textview.getData());
+        finish();
       });
     });
-  }
+  };
+  compilerview.connect('changed', function(wid, text) { rebuildCompiler(text); });
 
+  {
+    let input = config.options.compiler ? Utils.loadFile(config.options.compiler) : null;
+    compilerview.setData(config.options.compiler, input, 0, 0, 0, 0);
+    rebuildCompiler(input);
+  }
 
   //
   let win = widget('main-window');
