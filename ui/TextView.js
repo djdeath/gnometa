@@ -18,6 +18,8 @@ const TextView = new Lang.Class({
   _colors: {
     'highlight': { name: 'highlight',
                    background: 'lightblue' },
+    'highlight2': { name: 'highlight2',
+                   background: 'lightgreen' },
     'alt-highlight': { name: 'alt-highlight',
                        background: '#fde5f6' },
     'hint': { name: 'hint',
