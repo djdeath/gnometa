@@ -120,7 +120,7 @@ let start = function() {
   let matchtreeview = new MatchTreeView.MatchTreeView();
   widget('compiler-paned').add1(matchtreeview);
 
-  let compilerview = new CompilerView.CompilerView();
+  let compilerview = new CompilerView.CompilerView({ compiler: config.options.compiler });
   widget('compiler-paned').add2(compilerview);
 
   let structview = new OutputView.OutputView({ name: 'view1' });

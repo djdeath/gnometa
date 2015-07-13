@@ -4,6 +4,7 @@ const GObject = imports.gi.GObject;
 const Gtk = imports.gi.Gtk;
 const GtkSource = imports.gi.GtkSource;
 const TextView = imports.TextView;
+const Utils = imports.Utils;
 
 const CompilerView = new Lang.Class({
   Name: 'CompilerView',
@@ -13,7 +14,8 @@ const CompilerView = new Lang.Class({
                       'sourceview-scrollview'],
 
   _init: function(args) {
-    this.parent(args);
+    this.parent(Utils.copyObjectBut(args, 'compiler'));
+    this._compiler = args.compiler;
     this.visible = true;
 
     this._sourceview = new TextView.TextView();
@@ -29,6 +31,7 @@ const CompilerView = new Lang.Class({
       textChanged = true;
     }
 
+    this._sourceview.sensitive = (filename === this._compiler);
     this._sourceview.hightlightRange('hint', istart, iend);
     this._sourceview.hightlightRange('alt-highlight', hstart, hend);
   },
