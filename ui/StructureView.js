@@ -68,8 +68,8 @@ const StructureView = new Lang.Class({
       let [min, nat] = node.widget.get_preferred_size();
       node.alloc.x = right;
       node.alloc.y = top;
-      node.alloc.width = nat.width;
-      node.totalHeight = node.alloc.height = nat.height;
+      node.alloc.width = min.width;
+      node.totalHeight = node.alloc.height = min.height;
     }
 
     let cwidth = right, ctop = top + node.alloc.height, height = node.alloc.y + node.alloc.height;
