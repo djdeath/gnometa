@@ -227,7 +227,7 @@ let start = function() {
   });
 
   //
-  let rebuildCompiler = function(text) {
+  let rebuildCompiler = AsyncContinuous.createContinuous(function(ac, text) {
     textview.setSensitive(false);
     let finish = function(error) {
       textview.setSensitive(true);
@@ -235,6 +235,7 @@ let start = function() {
         return Utils.printError(error);
       else if (config.options.compiler)
         FileSaver.delayedSaveFile(config.options.compiler, text);
+      ac.done();
     };
     UiHelper.commands.compile(compilerName, text, function(error, ret) {
       if (error) return finish(error);
@@ -256,13 +257,13 @@ let start = function() {
         finish();
       });
     });
-  };
-  compilerview.connect('changed', function(wid, text) { rebuildCompiler(text); });
+  });
+  compilerview.connect('changed', function(wid, text) { rebuildCompiler.run(text); });
 
   {
     let input = config.options.compiler ? Utils.loadFile(config.options.compiler) : null;
     compilerview.setData(config.options.compiler, input, 0, 0, 0, 0);
-    rebuildCompiler(input);
+    rebuildCompiler.run(input);
   }
 
   //
