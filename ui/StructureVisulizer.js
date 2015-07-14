@@ -7,6 +7,7 @@ Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
 
 const AsyncContinuous = imports.AsyncContinuous;
 const CompilerView = imports.CompilerView;
+const FileSaver = imports.FileSaver;
 const InputView = imports.InputView;
 const MatchTreeView = imports.MatchTreeView;
 const OutputView = imports.OutputView;
@@ -146,6 +147,7 @@ let start = function() {
         return;
       }
       textview.removeAllHighlight();
+      if (config.options.input) FileSaver.delayedSaveFile(config.options.input, text)
       ac.done();
     }.bind(this));
   });
@@ -229,7 +231,10 @@ let start = function() {
     textview.setSensitive(false);
     let finish = function(error) {
       textview.setSensitive(true);
-      if (error) return Utils.printError(error);
+      if (error)
+        return Utils.printError(error);
+      else if (config.options.compiler)
+        FileSaver.delayedSaveFile(config.options.compiler, text);
     };
     UiHelper.commands.compile(compilerName, text, function(error, ret) {
       if (error) return finish(error);
@@ -280,6 +285,8 @@ let start = function() {
   win.show();
 
   Gtk.main();
+
+  FileSaver.saveFiles();
 };
 
 start();
