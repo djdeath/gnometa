@@ -163,7 +163,7 @@ let start = function() {
         if (error) return Utils.printError(error);
         let  [idx, match] = ret;
         _structureTreeIdx = idx;
-        textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
+        textview.hightlightRange('highlight', match.start, match.stop);
         compilerview.setData.apply(compilerview, compilerArgs(match.id));
         structview.setData(match.value);
       }.bind(this));
@@ -182,7 +182,7 @@ let start = function() {
         if (error) return Utils.printError(error);
         let [idx, match] = ret;
         _structureTreeIdx = idx;
-        textview.hightlightRange('highlight', match.start.idx, match.stop.idx);
+        textview.hightlightRange('highlight', match.start, match.stop);
         compilerview.setData.apply(compilerview, compilerArgs(match.id));
         structview.setData(match.value);
       }.bind(this));
@@ -215,14 +215,14 @@ let start = function() {
   //
   matchtreeview.onHover(function(structure) {
     textview.removeSelection();
-    textview.hightlightRange('highlight', structure.start.idx, structure.stop.idx);
+    textview.hightlightRange('highlight', structure.start, structure.stop);
     compilerview.setData.apply(compilerview, compilerArgs(structure.id,
                                                           structure.call));
     structview.setData(structure.value);
   });
   matchtreeview.onClick(function(structure) {
     textview.removeSelection();
-    textview.hightlightRange('highlight', structure.start.idx, structure.stop.idx);
+    textview.hightlightRange('highlight', structure.start, structure.stop);
     if (structure.call)
       compilerview
     compilerview.setData.apply(compilerview, compilerArgs(structure.id,
