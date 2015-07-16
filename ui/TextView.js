@@ -180,8 +180,12 @@ const TextView = new Lang.Class({
     highlight.start = highlight.end = 0;
   },
   removeAllHighlight: function() {
-    for (let i in this._colors)
-      this.removeHighlightRange(i);
+    for (let i in this._colors) {
+      this.buffer.remove_tag_by_name(i,
+                                     this.buffer.get_start_iter(),
+                                     this.buffer.get_end_iter());
+      this._tagsOffsets[i] = { start: 0, end: 0};
+    }
   },
   removeSelection: function() {
     let iter = this.buffer.get_iter_at_offset(0);
