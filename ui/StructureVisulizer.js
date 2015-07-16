@@ -139,6 +139,11 @@ let start = function() {
   // Translation
   let translate = AsyncContinuous.createContinuous(function(ac, text) {
     UiHelper.commands.translate(compilerName, text, compilerRule, 'view0', function(error, ret) {
+
+      matchtreeview.setData(null, null);
+      let input = config.options.compiler ? Utils.loadFile(config.options.compiler) : null;
+      compilerview.setData(config.options.compiler, input, 0, 0, 0, 0);
+
       if (error) {
         Utils.printError(error);
         textview.removeAllHighlight();
