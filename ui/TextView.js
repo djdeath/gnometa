@@ -103,13 +103,14 @@ const TextView = new Lang.Class({
   },
 
   _sizeAllocated: function(widget, alloc) {
-    if (this.following_highlight)
-      this._scrollToHighlight();
+    this._scrollToHighlight();
     return false;
   },
 
   _scrollToHighlight: function() {
     let highlight = this._getRange(this._lastHighlight);
+    if (!this.following_highlight || highlight.start == highlight.end)
+      return;
     let rect1 = this.get_iter_location(this._iterAtOffset(highlight.start)),
         rect2 = this.get_iter_location(this._iterAtOffset(highlight.end));
     let visible = [this.vadjustment.value, this.vadjustment.value + this.vadjustment.page_size];
@@ -171,8 +172,7 @@ const TextView = new Lang.Class({
     this._unhighlightRange(name, highlight.start, highlight.end);
     this._highlightRange(name, start, end);
     this._lastHighlight = name;
-    if (this.following_highlight)
-      this._scrollToHighlight();
+    this._scrollToHighlight();
   },
   removeHighlightRange: function(name) {
     let highlight = this._getRange(name);
