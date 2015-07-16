@@ -31,15 +31,6 @@ const StructureView = new Lang.Class({
     this._layoutNodes(this._root, 0, 0);
   },
 
-  _text: function(id) {
-    // TODO: We could embed the rule's name into the source map.
-    let ret = this._textFunc(id);
-    if (!ret) return '';
-    ret = ret.match(/\s*([\w\d]+).*/);
-    if (!ret) return '';
-    return ret[1];
-  },
-
   _emit: function(signal, tree) {
     if (this._callbacks[signal])
       this._callbacks[signal](tree);
@@ -93,8 +84,22 @@ const StructureView = new Lang.Class({
             totalHeight: 0, };
   },
 
+  _compilerRule: function(tree) {
+    // TODO: We could embed the rule's name into the source map.
+    let ret = this._compilerTextFunc(tree.id);
+    if (!ret) return '';
+    ret = ret.match(/\s*([\w\d]+).*/);
+    if (!ret) return '';
+    return ret[1];
+  },
+
+  _inputText: function(tree) {
+    return this._inputTextFunc(tree.start, tree.stop).replace(/\n/gi, ' ');
+  },
+
   _createButton: function(tree) {
-    let text = this._text(tree.id);
+    //let text = this._compilerRule(tree);
+    let text = this._inputText(tree);
     text = text == 'token' ? tree.value : text;
     let button = new Gtk.Button({ label: text, visible: true });
     this.add(button);
@@ -126,10 +131,11 @@ const StructureView = new Lang.Class({
       children[i].destroy();
   },
 
-  setData: function(tree, textFunc) {
+  setData: function(tree, compilerTextFunc, inputTextFunc) {
     this._tree = tree;
     this._removeChildren();
-    this._textFunc = textFunc;
+    this._compilerTextFunc = compilerTextFunc;
+    this._inputTextFunc = inputTextFunc;
     this._root = this._createNodes(tree);
     this.reset_style();
   },

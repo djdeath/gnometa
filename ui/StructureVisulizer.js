@@ -136,6 +136,10 @@ let start = function() {
     return ret.concat([0, 0]);
   };
 
+  let inputText = function(from, to) {
+    return textview.getData().slice(from, to);
+  };
+
   // Translation
   let translate = AsyncContinuous.createContinuous(function(ac, text) {
     UiHelper.commands.translate(compilerName, text, compilerRule, 'view0', function(error, ret) {
@@ -170,7 +174,7 @@ let start = function() {
     }.bind(this));
     UiHelper.commands.getStructure('view0', offset, offset, function(error, ret) {
       if (error) return Utils.printError(error);
-      matchtreeview.setData(ret, ometaText);
+      matchtreeview.setData(ret, ometaText, inputText);
     }.bind(this));
   };
   let selectionChanged = function(startOffset, endOffset) {
@@ -189,7 +193,7 @@ let start = function() {
     }.bind(this));
     UiHelper.commands.getStructure('view0', startOffset, endOffset, function(error, ret) {
       if (error) return Utils.printError(error);
-      matchtreeview.setData(ret, ometaText);
+      matchtreeview.setData(ret, ometaText, inputText);
     }.bind(this));
   };
   let alternateMenu = function() {
