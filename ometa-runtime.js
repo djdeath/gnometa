@@ -292,17 +292,14 @@ resetSourceMap();
 
 let OMeta = {
   _extractLocation: function(retVal) {
-    return { start: retVal.start.idx,
+    return { start: retVal.start,
              stop: this.input.idx, };
-  },
-  _structureLocation: function(input) {
-    return { idx: input.idx };
   },
   _startStructure: function(id, rule) {
     return {
       rule: rule,
       id: id,
-      start: this._structureLocation(this.input),
+      start: this.input.idx,
       stop: null,
       children: [],
       value: null,
@@ -317,12 +314,8 @@ let OMeta = {
   _getStructureValue: function(structure) {
     return structure.value;
   },
-  _structureMatches: function(parent, child) {
-    return (parent.start.idx == child.start.idx &&
-            parent.stop.idx == child.stop.idx);
-  },
   _endStructure: function(structure) {
-    structure.stop = this._structureLocation(this.input);
+    structure.stop = this.input.idx;
     return structure;
   },
   _forwardStructure: function(structure, id) {
