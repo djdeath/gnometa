@@ -15,7 +15,7 @@ let parseArguments = function(options, args) {
   }
 
   let isValue = false, lastOption = null;
-  for (let i = 1; i < args.length; i++) {
+  for (let i = args[0] == '--' ? 1 : 0; i < args.length; i++) {
     let arg = args[i];
     if (lastOption) {
       if (lastOption.allowMultiple) {
