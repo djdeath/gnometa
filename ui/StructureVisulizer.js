@@ -147,7 +147,7 @@ let start = function() {
         return;
       }
       textview.removeAllHighlight();
-      if (config.options.input) FileSaver.delayedSaveFile(config.options.input, text)
+      if (config.options.input) FileSaver.delayedSaveFile(config.options.input, text);
       ac.done();
     }.bind(this));
   });
