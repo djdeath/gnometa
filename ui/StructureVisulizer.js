@@ -232,7 +232,7 @@ let start = function() {
     compilerview.setData.apply(compilerview, compilerArgs(structure.id,
                                                           structure.call));
     structview.setData(structure.value);
-    matchtreeview.setData(structure, ometaText);
+    matchtreeview.setData(structure, ometaText, inputText);
   });
 
   //
