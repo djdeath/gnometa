@@ -128,12 +128,25 @@ let start = function() {
   paned.addWidget(structview);
 
   //
+  // let compilerArgs = function(highlightId, hintId) {
+  //   let ret = [ometaFile(highlightId),
+  //              Utils.loadFile(ometaFile(highlightId))].concat(ometaRange(highlightId));
+  //   if (hintId && ret[0] === ometaFile(hintId))
+  //     return ret.concat(ometaRange(hintId));
+  //   return ret.concat([0, 0]);
+  // };
   let compilerArgs = function(highlightId, hintId) {
-    let ret = [ometaFile(highlightId),
-               Utils.loadFile(ometaFile(highlightId))].concat(ometaRange(highlightId));
+    let ret = [config.options.compiler,
+               Utils.loadFile(config.options.compiler)];
+    if (ometaFile(highlightId) == config.options.compiler)
+      ret = ret.concat(ometaRange(highlightId));
+    else
+      ret = ret.concat([0, 0]);
     if (hintId && ret[0] === ometaFile(hintId))
-      return ret.concat(ometaRange(hintId));
-    return ret.concat([0, 0]);
+      ret = ret.concat(ometaRange(hintId));
+    else
+      ret = ret.concat([0, 0]);
+    return ret;
   };
 
   let inputText = function(from, to) {

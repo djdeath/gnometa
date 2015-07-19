@@ -40,8 +40,8 @@ const CompilerView = new Lang.Class({
     }
 
     this._sourceview.removeAllHighlight();
-    this._sourceview.hightlightRange('hint', istart, iend);
     this._sourceview.hightlightRange('alt-highlight', hstart, hend);
+    this._sourceview.hightlightRange('hint', istart, iend);
     this._sourceview.sensitive = (filename === this._compiler);
     this._inSet = false;
   },
