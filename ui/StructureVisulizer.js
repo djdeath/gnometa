@@ -98,6 +98,7 @@ let start = function() {
   let source = '';
   if (config.options.input)
       source = Utils.loadFile(config.options.input);
+  let compiler = config.options.compiler ? config.options.compiler : '../bs-ometa-compiler.ometa';
   let compilerName = config.options.compiler ? 'view0' : 'OMeta';
   let compilerRule = config.options.compiler ? config.options['entry-point'].split('.')[1] : 'topLevel';
 
@@ -121,7 +122,7 @@ let start = function() {
   let matchtreeview = new MatchTreeView.MatchTreeView();
   widget('compiler-paned').add1(matchtreeview);
 
-  let compilerview = new CompilerView.CompilerView({ compiler: config.options.compiler });
+  let compilerview = new CompilerView.CompilerView({ compiler: compiler });
   widget('compiler-paned').add2(compilerview);
 
   let structview = new OutputView.OutputView({ name: 'view1' });
@@ -136,9 +137,8 @@ let start = function() {
   //   return ret.concat([0, 0]);
   // };
   let compilerArgs = function(highlightId, hintId) {
-    let ret = [config.options.compiler,
-               Utils.loadFile(config.options.compiler)];
-    if (ometaFile(highlightId) == config.options.compiler)
+    let ret = [compiler, Utils.loadFile(compiler)];
+    if (ometaFile(highlightId) == compiler)
       ret = ret.concat(ometaRange(highlightId));
     else
       ret = ret.concat([0, 0]);
@@ -158,8 +158,7 @@ let start = function() {
     UiHelper.commands.translate(compilerName, text, compilerRule, 'view0', function(error, ret) {
 
       matchtreeview.setData(null, null);
-      let input = config.options.compiler ? Utils.loadFile(config.options.compiler) : null;
-      compilerview.setData(config.options.compiler, input, 0, 0, 0, 0);
+      compilerview.setData(compiler, Utils.loadFile(compiler), 0, 0, 0, 0);
 
       textview.setError(error)
       textview.removeAllHighlight();
@@ -254,8 +253,8 @@ let start = function() {
       textview.setBusy(false);
       if (error)
         textview.setError(error);
-      else if (config.options.compiler)
-        FileSaver.delayedSaveFile(config.options.compiler, text);
+      else if (compiler)
+        FileSaver.delayedSaveFile(compiler, text);
       ac.done();
     };
     UiHelper.commands.compile(compilerName, text, function(error, ret) {
@@ -263,7 +262,7 @@ let start = function() {
 
       OMetaMap = ret;
       if (config.options.compiler)
-        OMetaMap.filenames[OMetaMap.filenames.length - 1] = config.options.compiler;
+        OMetaMap.filenames[OMetaMap.filenames.length - 1] = compiler;
       else {
         // Using OMeta.
         translate.run(textview.getData());
@@ -279,11 +278,12 @@ let start = function() {
       });
     });
   });
-  compilerview.connect('changed', function(wid, text) { rebuildCompiler.run(text); });
+  if (config.options.compiler)
+    compilerview.connect('changed', function(wid, text) { rebuildCompiler.run(text); });
 
   {
-    let input = config.options.compiler ? Utils.loadFile(config.options.compiler) : null;
-    compilerview.setData(config.options.compiler, input, 0, 0, 0, 0);
+    let input = Utils.loadFile(compiler);
+    compilerview.setData(compiler, input, 0, 0, 0, 0);
     rebuildCompiler.run(input);
   }
 
