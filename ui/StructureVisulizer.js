@@ -148,14 +148,13 @@ let start = function() {
       let input = config.options.compiler ? Utils.loadFile(config.options.compiler) : null;
       compilerview.setData(config.options.compiler, input, 0, 0, 0, 0);
 
+      textview.setError(error)
+      textview.removeAllHighlight();
       if (error) {
-        Utils.printError(error);
-        textview.removeAllHighlight();
         textview.hightlightRange('error', error.idx, text.length - 1);
         ac.done();
         return;
       }
-      textview.removeAllHighlight();
       if (config.options.input) FileSaver.delayedSaveFile(config.options.input, text);
       ac.done();
     }.bind(this));
@@ -237,11 +236,11 @@ let start = function() {
 
   //
   let rebuildCompiler = AsyncContinuous.createContinuous(function(ac, text) {
-    textview.setSensitive(false);
+    textview.setBusy(true);
     let finish = function(error) {
-      textview.setSensitive(true);
+      textview.setBusy(false);
       if (error)
-        return Utils.printError(error);
+        textview.setError(error);
       else if (config.options.compiler)
         FileSaver.delayedSaveFile(config.options.compiler, text);
       ac.done();

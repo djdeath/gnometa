@@ -14,7 +14,10 @@ const OutputView = new Lang.Class({
   Name: 'OutputView',
   Extends: Gtk.Box,
   Template: 'resource:///org/gnome/Gnometa/output-template.ui',
-  InternalChildren: [ 'output-type',
+  InternalChildren: [ 'error',
+                      'image',
+                      'output-type',
+                      'spinner',
                       'textview',
                       'treeview-viewport'],
 
@@ -47,6 +50,8 @@ const OutputView = new Lang.Class({
     });
 
     this._lang_manager = GtkSource.LanguageManager.get_default();
+    this.setBusy(false);
+    this.setError(null);
   },
 
   _renderingChanged: function() {
@@ -58,6 +63,15 @@ const OutputView = new Lang.Class({
   },
 
   getName: function() { return this._name; },
+
+  setBusy: function(value) {
+    this._spinner.active =  this._spinner.visible = value;
+  },
+
+  setError: function(text) {
+    this._image.icon_name = text ? 'dialog-error' : 'emblem-default';
+    this._error.label = text;
+  },
 
   setData: function(data) {
     this._data = data;
