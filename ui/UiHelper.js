@@ -130,7 +130,7 @@ commands.getStructure = function(input, start, end) {
 commands.translate = function(name, input, rule, output) {
   let compiler = _compilers[name];
   _structures[output] = compiler.run(rule, input);
-  return true;
+  return _structures[output].value;
 };
 
 // Find main rule & compiler variable from offset.

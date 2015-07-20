@@ -8,11 +8,10 @@ Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
 const AsyncContinuous = imports.AsyncContinuous;
 const CompilerView = imports.CompilerView;
 const FileSaver = imports.FileSaver;
-const InputView = imports.InputView;
 const MatchTreeView = imports.MatchTreeView;
-const OutputView = imports.OutputView;
 const SplitView = imports.SplitView;
 const TextView = imports.TextView;
+const Translator = imports.Translator;
 const Options = imports.options;
 const UiHelper = imports.UiHelperClient;
 const Utils = imports.Utils;
@@ -22,6 +21,7 @@ const CmdOptions = [
   {
     name: 'compiler',
     shortName: 'c',
+    allowMultiple: true,
     requireArgument: true,
     defaultValue: null,
     help: 'Compiler to use',
@@ -29,6 +29,7 @@ const CmdOptions = [
   {
     name: 'entry-point',
     shortName: 'e',
+    allowMultiple: true,
     requireArgument: true,
     defaultValue: null,
     help: 'Entry point for the compiler to use (Grammar.Rule)',
@@ -66,8 +67,8 @@ let start = function() {
     return -1;
   }
 
-  if (config.options.compiler && !config.options['entry-point']) {
-    print('Cannot use custom compiler without an entry point');
+  if (config.options.compiler.length != config.options['entry-point'].length) {
+    print('Nedd same number of compilers and entry points');
     return -1;
   }
 
@@ -98,9 +99,6 @@ let start = function() {
   let source = '';
   if (config.options.input)
       source = Utils.loadFile(config.options.input);
-  let compiler = config.options.compiler ? config.options.compiler : '../bs-ometa-compiler.ometa';
-  let compilerName = config.options.compiler ? 'view0' : 'OMeta';
-  let compilerRule = config.options.compiler ? config.options['entry-point'].split('.')[1] : 'topLevel';
 
   // Structure tree
   let _structureTreeIdx = -1;
@@ -116,181 +114,193 @@ let start = function() {
   widget('main-paned').remove(widget('main-paned').get_child1());
   widget('main-paned').add1(paned);
 
-  let textview = new InputView.InputView({ name: 'view0', language: 'js' });
-  paned.addWidget(textview);
-
-  let matchtreeview = new MatchTreeView.MatchTreeView();
-  widget('compiler-paned').add1(matchtreeview);
-
-  let compilerview = new CompilerView.CompilerView({ compiler: compiler });
-  widget('compiler-paned').add2(compilerview);
-
-  let structview = new OutputView.OutputView({ name: 'view1' });
-  paned.addWidget(structview);
-
-  //
-  // let compilerArgs = function(highlightId, hintId) {
-  //   let ret = [ometaFile(highlightId),
-  //              Utils.loadFile(ometaFile(highlightId))].concat(ometaRange(highlightId));
-  //   if (hintId && ret[0] === ometaFile(hintId))
-  //     return ret.concat(ometaRange(hintId));
-  //   return ret.concat([0, 0]);
-  // };
-  let compilerArgs = function(highlightId, hintId) {
-    let ret = [compiler, Utils.loadFile(compiler)];
-    if (ometaFile(highlightId) == compiler)
-      ret = ret.concat(ometaRange(highlightId));
-    else
-      ret = ret.concat([0, 0]);
-    if (hintId && ret[0] === ometaFile(hintId))
-      ret = ret.concat(ometaRange(hintId));
-    else
-      ret = ret.concat([0, 0]);
-    return ret;
+  let translators = [];
+  let addTranslator = function(compiler, entry_point, input) {
+    translators.push(new Translator.Translator({ compiler: compiler,
+                                                 entry_point: entry_point,
+                                                 input: input }));
+    return translators[translators.length - 1];
   };
 
-  let inputText = function(from, to) {
-    return textview.getData().slice(from, to);
-  };
+  for (let i = 0; i < config.options.compiler.length; i++)
+    paned.addWidget(addTranslator(config.options.compiler[i],
+                                  config.options['entry-point'][i],
+                                  i == 0 && config.options.input ? config.options.input : null));
+  paned.addWidget(addTranslator(null, '.', null));
 
-  // Translation
-  let translate = AsyncContinuous.createContinuous(function(ac, text) {
-    UiHelper.commands.translate(compilerName, text, compilerRule, 'view0', function(error, ret) {
-
-      matchtreeview.setData(null, null);
-      compilerview.setData(compiler, Utils.loadFile(compiler), 0, 0, 0, 0);
-
-      textview.setError(error)
-      textview.removeAllHighlight();
-      if (error) {
-        textview.hightlightRange('error', error.idx, text.length - 1);
-        ac.done();
-        return;
-      }
-      if (config.options.input) FileSaver.delayedSaveFile(config.options.input, text);
-      ac.done();
-    }.bind(this));
-  });
-  let getBestMatch = function(offset) {
-    UiHelper.commands.matchStructure('view0', offset, offset, 'view0', function(error, ret) {
-      if (error) return Utils.printError(error);
-      UiHelper.commands.getBestMatch('view0', function(error, ret) {
-        if (error) return Utils.printError(error);
-        let  [idx, match] = ret;
-        _structureTreeIdx = idx;
-        textview.hightlightRange('highlight', match.start, match.stop);
-        compilerview.setData.apply(compilerview, compilerArgs(match.id));
-        structview.setData(match.value);
-      }.bind(this));
-    }.bind(this));
-    UiHelper.commands.getStructure('view0', offset, offset, function(error, ret) {
-      if (error) return Utils.printError(error);
-      matchtreeview.setData(ret, ometaText, inputText);
-    }.bind(this));
-  };
-  let selectionChanged = function(startOffset, endOffset) {
-    UiHelper.commands.matchStructure('view0', startOffset, endOffset, 'view0', function(error, ret) {
-      textview.removeSelection();
-      if (error) return Utils.printError(error);
-      _structureTreeIdx = 0;
-      UiHelper.commands.getMatch('view0', _structureTreeIdx, function(error, ret) {
-        if (error) return Utils.printError(error);
-        let [idx, match] = ret;
-        _structureTreeIdx = idx;
-        textview.hightlightRange('highlight', match.start, match.stop);
-        compilerview.setData.apply(compilerview, compilerArgs(match.id));
-        structview.setData(match.value);
-      }.bind(this));
-    }.bind(this));
-    UiHelper.commands.getStructure('view0', startOffset, endOffset, function(error, ret) {
-      if (error) return Utils.printError(error);
-      matchtreeview.setData(ret, ometaText, inputText);
-    }.bind(this));
-  };
-  let alternateMenu = function() {
-    compilerview.get_parent().show();
-    repositionPanedAt(compilerview.get_parent().get_parent(), 2.0 / 3, 'height');
-    repositionPanedAt(compilerview.get_parent(), 1.0 / 2, 'width');
-  };
-
-  //
-  textview.setData(source);
-
-  textview.connect('changed', function(wid, text) {
-    translate.run(text);
-  }.bind(this));
-
-  textview.connect('offset-changed', function(wid, offset) {
-    getBestMatch(offset);
-  }.bind(this));
-  textview.connect('selection-changed', function(wid, startOffset, endOffset) {
-    selectionChanged(startOffset, endOffset);
-  });
-
-  //
-  matchtreeview.onHover(function(structure) {
-    textview.removeSelection();
-    textview.hightlightRange('highlight', structure.start, structure.stop);
-    compilerview.setData.apply(compilerview, compilerArgs(structure.id,
-                                                          structure.call));
-    structview.setData(structure.value);
-  });
-  matchtreeview.onClick(function(structure) {
-    textview.removeSelection();
-    textview.hightlightRange('highlight', structure.start, structure.stop);
-    if (structure.call)
-      compilerview
-    compilerview.setData.apply(compilerview, compilerArgs(structure.id,
-                                                          structure.call));
-    structview.setData(structure.value);
-    matchtreeview.setData(structure, ometaText, inputText);
-  });
-
-  //
-  let rebuildCompiler = AsyncContinuous.createContinuous(function(ac, text) {
-    textview.setBusy(true);
-    let finish = function(error) {
-      textview.setBusy(false);
-      if (error)
-        textview.setError(error);
-      else if (compiler)
-        FileSaver.delayedSaveFile(compiler, text);
-      ac.done();
-    };
-    UiHelper.commands.compile(compilerName, text, function(error, ret) {
-      if (error) return finish(error);
-
-      OMetaMap = ret;
-      if (config.options.compiler)
-        OMetaMap.filenames[OMetaMap.filenames.length - 1] = compiler;
-      else {
-        // Using OMeta.
-        translate.run(textview.getData());
-        finish();
-        return;
-      }
-
-      let entryPoint = config.options['entry-point'].split('.');
-      UiHelper.commands.compilerConfigure(compilerName, entryPoint[0], entryPoint[1], function(error, ret) {
-        if (error) return finish(error);
-        translate.run(textview.getData());
-        finish();
-      });
+  let forwardUpdate = function(parent, child) {
+    parent.on('changed', function(ret) {
+      child.setData(ret);
     });
-  });
-  if (config.options.compiler)
-    compilerview.connect('changed', function(wid, text) { rebuildCompiler.run(text); });
-
-  {
-    let input = Utils.loadFile(compiler);
-    compilerview.setData(compiler, input, 0, 0, 0, 0);
-    rebuildCompiler.run(input);
+  };
+  for (let i = 0; i < translators.length - 1; i++) {
+    forwardUpdate(translators[i], translators[i + 1]);
   }
+
+  // //
+  // // let compilerArgs = function(highlightId, hintId) {
+  // //   let ret = [ometaFile(highlightId),
+  // //              Utils.loadFile(ometaFile(highlightId))].concat(ometaRange(highlightId));
+  // //   if (hintId && ret[0] === ometaFile(hintId))
+  // //     return ret.concat(ometaRange(hintId));
+  // //   return ret.concat([0, 0]);
+  // // };
+  // let compilerArgs = function(highlightId, hintId) {
+  //   let ret = [compiler, Utils.loadFile(compiler)];
+  //   if (ometaFile(highlightId) == compiler)
+  //     ret = ret.concat(ometaRange(highlightId));
+  //   else
+  //     ret = ret.concat([0, 0]);
+  //   if (hintId && ret[0] === ometaFile(hintId))
+  //     ret = ret.concat(ometaRange(hintId));
+  //   else
+  //     ret = ret.concat([0, 0]);
+  //   return ret;
+  // };
+
+  // let inputText = function(from, to) {
+  //   return textview.getData().slice(from, to);
+  // };
+
+  // let getBestMatch = function(offset) {
+  //   UiHelper.commands.matchStructure('view0', offset, offset, 'view0', function(error, ret) {
+  //     if (error) return Utils.printError(error);
+  //     UiHelper.commands.getBestMatch('view0', function(error, ret) {
+  //       if (error) return Utils.printError(error);
+  //       let  [idx, match] = ret;
+  //       _structureTreeIdx = idx;
+  //       textview.hightlightRange('highlight', match.start, match.stop);
+  //       compilerview.setData.apply(compilerview, compilerArgs(match.id));
+  //       structview.setData(match.value);
+  //     }.bind(this));
+  //   }.bind(this));
+  //   UiHelper.commands.getStructure('view0', offset, offset, function(error, ret) {
+  //     if (error) return Utils.printError(error);
+  //     matchtreeview.setData(ret, ometaText, inputText);
+  //   }.bind(this));
+  // };
+  // let selectionChanged = function(startOffset, endOffset) {
+  //   UiHelper.commands.matchStructure('view0', startOffset, endOffset, 'view0', function(error, ret) {
+  //     textview.removeSelection();
+  //     if (error) return Utils.printError(error);
+  //     _structureTreeIdx = 0;
+  //     UiHelper.commands.getMatch('view0', _structureTreeIdx, function(error, ret) {
+  //       if (error) return Utils.printError(error);
+  //       let [idx, match] = ret;
+  //       _structureTreeIdx = idx;
+  //       textview.hightlightRange('highlight', match.start, match.stop);
+  //       compilerview.setData.apply(compilerview, compilerArgs(match.id));
+  //       structview.setData(match.value);
+  //     }.bind(this));
+  //   }.bind(this));
+  //   UiHelper.commands.getStructure('view0', startOffset, endOffset, function(error, ret) {
+  //     if (error) return Utils.printError(error);
+  //     matchtreeview.setData(ret, ometaText, inputText);
+  //   }.bind(this));
+  // };
+  let getFocusedTranslator = function() {
+    let focus = widget('main-window').get_focus();
+    while (focus && focus.get_parent() != paned)
+      focus = focus.get_parent();
+    return focus;
+  };
+
+  let showAlternateMenu = function() {
+    let translator = getFocusedTranslator();
+    if (!translator)
+      return;
+    let mainPaned = widget('main-paned');
+    if (mainPaned.get_child2())
+      mainPaned.remove(mainPaned.get_child2());
+    mainPaned.add2(translator.getCompilerView());
+    // compilerview.get_parent().show();
+    repositionPanedAt(mainPaned, 2.0 / 3, 'height');
+    //repositionPanedAt(compilerview.get_parent(), 1.0 / 2, 'width');
+  };
+  let hideAlternateMenu = function() {
+    let mainPaned = widget('main-paned');
+    if (mainPaned.get_child2())
+      mainPaned.remove(mainPaned.get_child2());
+  };
+
+  // //
+  // textview.setData(source);
+
+  // textview.connect('changed', function(wid, text) {
+  //   translate.run(text);
+  // }.bind(this));
+
+  // textview.connect('offset-changed', function(wid, offset) {
+  //   getBestMatch(offset);
+  // }.bind(this));
+  // textview.connect('selection-changed', function(wid, startOffset, endOffset) {
+  //   selectionChanged(startOffset, endOffset);
+  // });
+
+  // //
+  // matchtreeview.onHover(function(structure) {
+  //   textview.removeSelection();
+  //   textview.hightlightRange('highlight', structure.start, structure.stop);
+  //   compilerview.setData.apply(compilerview, compilerArgs(structure.id,
+  //                                                         structure.call));
+  //   structview.setData(structure.value);
+  // });
+  // matchtreeview.onClick(function(structure) {
+  //   textview.removeSelection();
+  //   textview.hightlightRange('highlight', structure.start, structure.stop);
+  //   if (structure.call)
+  //     compilerview
+  //   compilerview.setData.apply(compilerview, compilerArgs(structure.id,
+  //                                                         structure.call));
+  //   structview.setData(structure.value);
+  //   matchtreeview.setData(structure, ometaText, inputText);
+  // });
+
+  // //
+  // let rebuildCompiler = AsyncContinuous.createContinuous(function(ac, text) {
+  //   textview.setBusy(true);
+  //   let finish = function(error) {
+  //     textview.setBusy(false);
+  //     if (error)
+  //       textview.setError(error);
+  //     else if (compiler)
+  //       FileSaver.delayedSaveFile(compiler, text);
+  //     ac.done();
+  //   };
+  //   UiHelper.commands.compile(compilerName, text, function(error, ret) {
+  //     if (error) return finish(error);
+
+  //     OMetaMap = ret;
+  //     if (config.options.compiler)
+  //       OMetaMap.filenames[OMetaMap.filenames.length - 1] = compiler;
+  //     else {
+  //       // Using OMeta.
+  //       translate.run(textview.getData());
+  //       finish();
+  //       return;
+  //     }
+
+  //     let entryPoint = config.options['entry-point'].split('.');
+  //     UiHelper.commands.compilerConfigure(compilerName, entryPoint[0], entryPoint[1], function(error, ret) {
+  //       if (error) return finish(error);
+  //       translate.run(textview.getData());
+  //       finish();
+  //     });
+  //   });
+  // });
+  // if (config.options.compiler)
+  //   compilerview.connect('changed', function(wid, text) { rebuildCompiler.run(text); });
+
+  // {
+  //   let input = Utils.loadFile(compiler);
+  //   compilerview.setData(compiler, input, 0, 0, 0, 0);
+  //   rebuildCompiler.run(input);
+  // }
 
   //
   let win = widget('main-window');
   win.set_titlebar(widget('titlebar'));
-  widget('add-button').connect('clicked', function() { paned.addWidget(new OutputView.OutputView({ name: 'view' + paned.nbWidgets() })); }.bind(this));
+  //widget('add-button').connect('clicked', function() { paned.addWidget(new OutputView.OutputView({ name: 'view' + paned.nbWidgets() })); }.bind(this));
   widget('remove-button').connect('clicked', function() { paned.removeLastWidget(); }.bind(this));
   widget('close-button').connect('clicked', function() { win.hide(); Gtk.main_quit(); }.bind(this));
   win.connect('key-press-event', function(w, event) {
@@ -298,8 +308,8 @@ let start = function() {
     switch (keyval) {
     case Gdk.KEY_F7: paned.shrinkFocusedChild(10); break;
     case Gdk.KEY_F8: paned.growFocusedChild(10); break;
-    case Gdk.KEY_Escape: compilerview.get_parent().hide(); break;
-    case Gdk.KEY_Alt_L: alternateMenu(); break;
+    case Gdk.KEY_Escape: hideAlternateMenu(); break;
+    case Gdk.KEY_Alt_L: showAlternateMenu(); break;
     }
     return false;
   }.bind(this));

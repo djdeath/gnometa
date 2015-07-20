@@ -11,7 +11,7 @@
       </object>
     </child>
   </object>
-  <template class="Gjs_InputView" parent="GtkBox">
+  <template class="Gjs_Translator" parent="GtkBox">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="orientation">vertical</property>
@@ -35,6 +35,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <property name="relief">half</property>
             <property name="popover">popover</property>
             <child>
               <object class="GtkImage" id="image">
@@ -50,6 +51,22 @@
             <property name="position">1</property>
           </packing>
         </child>
+        <child>
+          <object class="GtkComboBoxText" id="output-type">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="active">0</property>
+            <items>
+              <item translatable="yes">Tree</item>
+              <item translatable="yes">Json</item>
+            </items>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
       </object>
       <packing>
         <property name="expand">False</property>
@@ -58,12 +75,37 @@
       </packing>
     </child>
     <child>
-      <object class="GtkScrolledWindow" id="textview-viewport">
+      <object class="GtkBox" id="box3">
         <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="shadow_type">in</property>
+        <property name="can_focus">False</property>
         <child>
-          <placeholder/>
+          <object class="GtkScrolledWindow" id="treeview-viewport">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="shadow_type">in</property>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow" id="textview-viewport">
+            <property name="can_focus">True</property>
+            <property name="shadow_type">in</property>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
         </child>
       </object>
       <packing>

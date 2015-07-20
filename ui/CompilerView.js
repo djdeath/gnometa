@@ -3,6 +3,7 @@ const Mainloop = imports.mainloop;
 const GObject = imports.gi.GObject;
 const Gtk = imports.gi.Gtk;
 const GtkSource = imports.gi.GtkSource;
+
 const TextView = imports.TextView;
 const Utils = imports.Utils;
 
@@ -25,11 +26,22 @@ const CompilerView = new Lang.Class({
     this._sourceview.following_highlight = true;
     this._sourceview.sensitive = false;
     this._sourceview_scrollview.add(this._sourceview);
+    this._sourceview.buffer.set_language(GtkSource.LanguageManager.get_default().get_language('js'));
 
     this._sourceview.buffer.connect('changed', function() {
       if (!this._inSet)
         this.emit('changed', this._sourceview.getData());
     }.bind(this));
+  },
+
+  setError: function(error) {
+    this._sourceview.hightlightRange('error',
+                                     error && error.idx ? error.idx : 0,
+                                     error && error.idx ? this._sourceview.getData().length - 1 : 0);
+  },
+
+  getData: function() {
+    return this._sourceview.getData();
   },
 
   setData: function(filename, data, hstart, hend, istart, iend) {
