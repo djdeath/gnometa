@@ -55,7 +55,7 @@ commands.compilerConfigure = function(name, variable, rule) {
                         _compilers[name].generatedCode,
                         '; return function(rule, input) { return ',
                         variable,
-                        '.matchAllStructure(input, rule, undefined); }; })()'].join(''));
+                        '[typeof input == "string" ? "matchAllStructure" : "matchStructure"](input, rule, undefined); }; })()'].join(''));
 };
 
 
