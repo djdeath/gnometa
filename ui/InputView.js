@@ -31,7 +31,6 @@ const InputView = new Lang.Class({
     Utils.forwardSignal(this._textview, this, 'selection-changed');
     Utils.forwardCall(this, this._textview, 'hightlightRange');
     Utils.forwardCall(this, this._textview, 'removeAllHighlight');
-    Utils.forwardCall(this, this._textview, 'removeHighlightRange');
     Utils.forwardCall(this, this._textview, 'removeSelection');
     Utils.forwardCall(this, this._textview, 'getData');
     Utils.forwardCall(this, this._textview, 'setData');

@@ -162,28 +162,21 @@ const TextView = new Lang.Class({
                                   this._iterAtOffset(start),
                                   this._iterAtOffset(end));
   },
-  _unhighlightRange: function(name, start, end) {
+  _unhighlight: function(name) {
     this.buffer.remove_tag_by_name(name,
-                                   this._iterAtOffset(start),
-                                   this._iterAtOffset(end));
+                                   this.buffer.get_start_iter(),
+                                   this.buffer.get_end_iter());
   },
   hightlightRange: function(name, start, end) {
     let highlight = this._getRange(name);
-    this._unhighlightRange(name, highlight.start, highlight.end);
+    this._unhighlight(name);
     this._highlightRange(name, start, end);
     this._lastHighlight = name;
     this._scrollToHighlight();
   },
-  removeHighlightRange: function(name) {
-    let highlight = this._getRange(name);
-    this._unhighlightRange(name, highlight.start, highlight.end);
-    highlight.start = highlight.end = 0;
-  },
   removeAllHighlight: function() {
     for (let i in this._colors) {
-      this.buffer.remove_tag_by_name(i,
-                                     this.buffer.get_start_iter(),
-                                     this.buffer.get_end_iter());
+      this._unhighlight(i);
       this._tagsOffsets[i] = { start: 0, end: 0};
     }
   },
