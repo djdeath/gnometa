@@ -57,6 +57,7 @@ const Translator = new Lang.Class({
         }
       },
     });
+    this._treeview.on('activated-data', function(data) { this._emit('changed', data); }.bind(this));
     this._compilerView = new CompilerView.CompilerView({ compiler: this._compiler });
 
     this._lang_manager = GtkSource.LanguageManager.get_default();

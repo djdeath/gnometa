@@ -1,6 +1,8 @@
 const Lang = imports.lang;
 const Gtk = imports.gi.Gtk;
 
+const Utils = imports.Utils;
+
 const TreeView = new Lang.Class({
   Name: 'TreeView',
   Extends: Gtk.TreeView,
@@ -10,7 +12,10 @@ const TreeView = new Lang.Class({
     this.enable_tree_lines = true;
     this.headers_visible = false;
     this.activate_on_single_click = true;
-    this.show();
+    this.visible = true;
+    this._callbacks = {};
+
+    this.connect('row-activated', this._emitActivatedData.bind(this));
   },
 
   getDataController: function() { return this._controller; },
@@ -54,7 +59,7 @@ const TreeView = new Lang.Class({
     }
   },
 
-    _insertBefore: function(parent, sibling) {
+  _insertBefore: function(parent, sibling) {
     let ret = { iter: null, path: null };
     ret.iter = this._store.insert_before(parent.iter, sibling);
     ret.path = this._store.get_path(ret.iter);
@@ -69,14 +74,38 @@ const TreeView = new Lang.Class({
     return this._dataMap[it.path.to_string()];
   },
 
+  getData: function() {
+    return this._data;
+  },
   setData: function(data) {
     this._data = data;
     this._refreshView();
   },
+
   _refreshView: function() {
     this._store.clear();
     this._dataMap = {}
     let iter = { iter: null, path: null };
     this._controller.render(iter, this._data);
+  },
+
+  _emitActivatedData: function(wid, path, col) {
+    let p = path.copy();
+    while (this._dataMap[p.to_string()] === undefined && p.up());
+
+    if (this._dataMap[p.to_string()] !== undefined)
+      this._emit('activated-data', this._dataMap[p.to_string()]);
+  },
+
+  //
+  on: function(signal, callback) {
+    this._callbacks[signal] = callback;
+  },
+
+  _emit: function(signal) {
+    if (!this._callbacks[signal])
+      return;
+    var args = Utils.copyArrayRange(arguments, 1, arguments.length);
+    this._callbacks[signal].apply(this, args);
   },
 });
