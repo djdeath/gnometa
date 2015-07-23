@@ -23,7 +23,7 @@ const CompilerView = new Lang.Class({
     this.visible = true;
 
     this._sourceview = new TextView.TextView();
-    this._sourceview.following_highlight = true;
+    this._sourceview.following_highlight = false;
     this._sourceview.sensitive = false;
     this._sourceview_scrollview.add(this._sourceview);
     this._sourceview.buffer.set_language(GtkSource.LanguageManager.get_default().get_language('js'));
