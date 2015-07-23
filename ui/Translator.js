@@ -57,7 +57,7 @@ const Translator = new Lang.Class({
         }
       },
     });
-    this._treeview.on('activated-data', function(data) { this._emit('changed', data); }.bind(this));
+    this._treeview.on('activated-data', function(data) { this._translate.run(data); }.bind(this));
     this._compilerView = new CompilerView.CompilerView({ compiler: this._compiler });
 
     this._lang_manager = GtkSource.LanguageManager.get_default();
@@ -86,10 +86,14 @@ const Translator = new Lang.Class({
   },
 
   _createBuilder: function() {
-    this._translate = AsyncContinuous.createContinuous(function(ac, text) {
-      UiHelper.commands.translate(this._name, text, this._rule, this._name, function(error, ret) {
+    this._translate = AsyncContinuous.createContinuous(function(ac, data) {
+      if (data === undefined) {
+        ac.done();
+        return;
+      }
+      UiHelper.commands.translate(this._name, data, this._rule, this._name, function(error, ret) {
         this.setError(error);
-        if (!error && this._input) FileSaver.delayedSaveFile(this._input, text);
+        if (!error && this._input) FileSaver.delayedSaveFile(this._input, data);
         this._emit('changed', ret);
         ac.done();
       }.bind(this));
