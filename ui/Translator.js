@@ -57,7 +57,7 @@ const Translator = new Lang.Class({
         }
       },
     });
-    this._treeview.on('activated-data', function(data) { this._translate.run(data); }.bind(this));
+    this._treeview.on('activated-data', function(data) { this._translateData(data); }.bind(this));
     this._compilerView = new CompilerView.CompilerView({ compiler: this._compiler });
 
     this._lang_manager = GtkSource.LanguageManager.get_default();
@@ -80,7 +80,7 @@ const Translator = new Lang.Class({
     if (this._input) {
       this._textview.buffer.connect('changed', function() {
         this._data = this._textview.getData();
-        this._translate.run(this._data);
+        this._translateData(this._data);
       }.bind(this));
     }
   },
@@ -115,17 +115,22 @@ const Translator = new Lang.Class({
           this._map.filenames[this._map.filenames.length - 1] = this._filename;
         else {
           // Using OMeta.
-          this._translate.run(this._data);
+          this._translateData(this._data);
           return finish(null);
         }
 
         UiHelper.commands.compilerConfigure(this._name, this._name, this._rule, function(error, ret) {
           if (error) return finish(error);
-          this._translate.run(this._data);
+          this._translateData(this._data);
           return finish(null);
         }.bind(this));
       }.bind(this));
     }.bind(this));
+  },
+
+  _translateData: function(data) {
+    if (this._translate)
+      this._translate.run(data);
   },
 
   _renderingChanged: function() {
@@ -169,8 +174,7 @@ const Translator = new Lang.Class({
       this._textview.buffer.set_language(lang_manager.get_language('json'));
     }
     this._renderingChanged();
-    if (this._translate)
-      this._translate.run(this._data);
+    this._translateData(this._data);
   },
 
   //
