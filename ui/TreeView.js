@@ -48,14 +48,17 @@ const TreeView = new Lang.Class({
       if (name == 'text')
         return { renderer: Gtk.CellRendererText,
                  property: 'text', };
+      else if (name == 'checkbox')
+        return { renderer: Gtk.CellRendererToggle,
+                 property: 'active', }
       return null;
     };
 
     for (let i = 0; i < model.length; i++) {
       let renderer = getRenderer(model[i].renderer)
       this.append_column(createColumn(renderer.renderer,
-                                              renderer.property,
-                                              i));
+                                      renderer.property,
+                                      i));
     }
   },
 

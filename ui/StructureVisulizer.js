@@ -6,11 +6,10 @@ const Gtk = imports.gi.Gtk;
 Gio.resources_register(Gio.resource_load('org.gnome.Gnometa.gresource'));
 
 const AsyncContinuous = imports.AsyncContinuous;
-const CompilerView = imports.CompilerView;
 const FileSaver = imports.FileSaver;
 const MatchTreeView = imports.MatchTreeView;
 const SplitView = imports.SplitView;
-const TextView = imports.TextView;
+const TreeView = imports.TreeView;
 const Translator = imports.Translator;
 const Options = imports.options;
 const UiHelper = imports.UiHelperClient;
@@ -136,6 +135,29 @@ let start = function() {
   for (let i = 0; i < translators.length - 1; i++) {
     forwardUpdate(translators[i], translators[i + 1]);
   }
+
+  //
+  let translatorsTreeview = new TreeView.TreeView({ activate_on_single_click: true });
+  widget('translators-popover').add(translatorsTreeview);
+  translatorsTreeview.setDataController({
+    getModel: function() {
+      return [{ type: GObject.TYPE_BOOLEAN, renderer: 'checkbox' },
+              { type: GObject.TYPE_STRING, renderer: 'text' }];
+    },
+    render: function(parent, data) {
+      for (let i = 1; i < translators.length - 1; i++) {
+        let iter = this.insertBefore(parent, null);
+        this.set(iter,
+                 translators[i],
+                 [translators[i].visible, translators[i].getName()]);
+      }
+    },
+  });
+  translatorsTreeview.on('activated-data', function(translator) {
+    translator.visible = !translator.visible;
+    translatorsTreeview.setData(null);
+  });
+  translatorsTreeview.setData(null);
 
   // //
   // // let compilerArgs = function(highlightId, hintId) {
@@ -301,7 +323,7 @@ let start = function() {
   let win = widget('main-window');
   win.set_titlebar(widget('titlebar'));
   //widget('add-button').connect('clicked', function() { paned.addWidget(new OutputView.OutputView({ name: 'view' + paned.nbWidgets() })); }.bind(this));
-  widget('remove-button').connect('clicked', function() { paned.removeLastWidget(); }.bind(this));
+  //widget('remove-button').connect('clicked', function() { paned.removeLastWidget(); }.bind(this));
   widget('close-button').connect('clicked', function() { win.hide(); Gtk.main_quit(); }.bind(this));
   win.connect('key-press-event', function(w, event) {
     let keyval = event.get_keyval()[1];

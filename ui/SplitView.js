@@ -30,16 +30,21 @@ const SplitView = new Lang.Class({
       if (this.get_realized())
         this.get_window().move_resize(alloc.x, alloc.y, alloc.width, alloc.height);
 
+    let visibles = 0;
+    this._children.forEach(function(child) { visibles += child.visible ? 1 : 0; });
     let allocation = { x: alloc.x,
                        y: alloc.y,
-                       width: alloc.width - (this._children.length - 1) * 10,
+                       width: alloc.width - (visibles - 1) * 10,
                        height: alloc.height, };
     let lastX = allocation.x;
     for (let i = 0; i < this._children.length; i++) {
       let child = this._children[i];
+      if (!child.visible)
+        continue;
       alloc.x = lastX;
       alloc.y = allocation.y;
-      alloc.width =  child.__splitView * allocation.width;
+      alloc.width = //child.__splitView * allocation.width;
+      (1.0 / visibles) * allocation.width;
       alloc.height = allocation.height;
       child.size_allocate(alloc);
       lastX = alloc.x + alloc.width;
