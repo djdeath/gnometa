@@ -73,9 +73,9 @@ const Translator = new Lang.Class({
     if (this._compiler) {
       this._compilerView.setData(this._compiler, Utils.loadFile(this._compiler), 0, 0, 0, 0);
       this._compilerView.connect('changed', function(wid, text) {
-        this._rebuildCompiler.run(text);
+        this._rebuildCompiler.run(text, true);
       }.bind(this));
-      this._rebuildCompiler.run(this._compilerView.getData());
+      this._rebuildCompiler.run(this._compilerView.getData(), false);
     }
     if (this._input) {
       this._textview.buffer.connect('changed', function() {
@@ -99,12 +99,12 @@ const Translator = new Lang.Class({
       }.bind(this));
     }.bind(this));
 
-    this._rebuildCompiler = AsyncContinuous.createContinuous(function(ac, text) {
+    this._rebuildCompiler = AsyncContinuous.createContinuous(function(ac, text, save) {
       this.setBusy(true);
       let finish = function(error) {
         this.setBusy(false);
         this._compilerView.setError(error);
-        if (!error && this._compiler) FileSaver.delayedSaveFile(this._compiler, text);
+        if (!error && this._compiler && save) FileSaver.delayedSaveFile(this._compiler, text);
         ac.done();
       }.bind(this);
       UiHelper.commands.compile(this._name, text, function(error, ret) {
