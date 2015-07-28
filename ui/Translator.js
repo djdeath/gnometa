@@ -19,6 +19,7 @@ const Translator = new Lang.Class({
   InternalChildren: [ 'error',
                       'image',
                       'output-type',
+                      'spinbutton',
                       'spinner',
                       'textview-viewport',
                       'treeview-viewport'],
@@ -32,15 +33,22 @@ const Translator = new Lang.Class({
     this._callbacks = {};
 
     this._output_type.connect('notify::active', this._renderingChanged.bind(this));
+    this._spinbutton.connect('notify::value', this._renderingChanged.bind(this));
     this._textview = new TextView.TextView();
     this._textview_viewport.add(this._textview);
     this._treeview = new TreeView.TreeView();
     this._treeview_viewport.add(this._treeview);
+    let self = this;
     this._treeview.setDataController({
       getModel: function() {
         return [{ type: GObject.TYPE_STRING, renderer: 'text' }];
       },
       render: function(parent, data) {
+        if (this._depth === undefined)
+          this._depth = 0;
+        else
+          this._depth++;
+
         if (typeof data != 'object' || data === null || data === undefined) {
           let iter = this.insertBefore(parent, null);
           this.set(iter, data, ['' + data]);
@@ -52,9 +60,10 @@ const Translator = new Lang.Class({
           if (typeof data[i] != 'object') {
             let s = data.constructor == Array ? '' + data[i] : i + ' : ' + data[i];
             this.set(iter, data, [s]);
-          } else
+          } else if (self._spinbutton.value < 0 || this._depth < self._spinbutton.value)
             this.render(iter, data[i]);
         }
+        this._depth--;
       },
     });
     this._treeview.on('activated-data', function(data) { this._translateData(data); }.bind(this));
@@ -137,8 +146,12 @@ const Translator = new Lang.Class({
     let isString = typeof this._data === 'string';
 
     this._output_type.sensitive = !isString;
+    this._spinbutton.visible = !isString;
     this._treeview.get_parent().visible = !isString && this._output_type.active == 0;
     this._textview.get_parent().visible = isString || this._output_type.active == 1;
+
+    this._treeview.setData(this._data);
+    this._treeview.expand_all();
   },
 
   getName: function() { return this._name; },
