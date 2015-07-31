@@ -278,47 +278,6 @@ let start = function() {
   //   matchtreeview.setData(structure, ometaText, inputText);
   // });
 
-  // //
-  // let rebuildCompiler = AsyncContinuous.createContinuous(function(ac, text) {
-  //   textview.setBusy(true);
-  //   let finish = function(error) {
-  //     textview.setBusy(false);
-  //     if (error)
-  //       textview.setError(error);
-  //     else if (compiler)
-  //       FileSaver.delayedSaveFile(compiler, text);
-  //     ac.done();
-  //   };
-  //   UiHelper.commands.compile(compilerName, text, function(error, ret) {
-  //     if (error) return finish(error);
-
-  //     OMetaMap = ret;
-  //     if (config.options.compiler)
-  //       OMetaMap.filenames[OMetaMap.filenames.length - 1] = compiler;
-  //     else {
-  //       // Using OMeta.
-  //       translate.run(textview.getData());
-  //       finish();
-  //       return;
-  //     }
-
-  //     let entryPoint = config.options['entry-point'].split('.');
-  //     UiHelper.commands.compilerConfigure(compilerName, entryPoint[0], entryPoint[1], function(error, ret) {
-  //       if (error) return finish(error);
-  //       translate.run(textview.getData());
-  //       finish();
-  //     });
-  //   });
-  // });
-  // if (config.options.compiler)
-  //   compilerview.connect('changed', function(wid, text) { rebuildCompiler.run(text); });
-
-  // {
-  //   let input = Utils.loadFile(compiler);
-  //   compilerview.setData(compiler, input, 0, 0, 0, 0);
-  //   rebuildCompiler.run(input);
-  // }
-
   //
   let win = widget('main-window');
   win.set_titlebar(widget('titlebar'));
