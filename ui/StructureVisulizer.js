@@ -22,7 +22,7 @@ const CmdOptions = [
     shortName: 'c',
     allowMultiple: true,
     requireArgument: true,
-    defaultValue: null,
+    defaultValue: [],
     help: 'Compiler to use',
   },
   {
@@ -30,7 +30,7 @@ const CmdOptions = [
     shortName: 'e',
     allowMultiple: true,
     requireArgument: true,
-    defaultValue: null,
+    defaultValue: [],
     help: 'Entry point for the compiler to use (Grammar.Rule)',
   },
   {
@@ -125,6 +125,9 @@ let start = function() {
     paned.addWidget(addTranslator(config.options.compiler[i],
                                   config.options['entry-point'][i],
                                   i == 0 && config.options.input ? config.options.input : null));
+  if (config.options.compiler.length < 1)
+    paned.addWidget(addTranslator(null, 'OMeta.topLevel',
+                                  config.options.input ? config.options.input : null));
   paned.addWidget(addTranslator(null, '.', null));
 
   let forwardUpdate = function(parent, child) {

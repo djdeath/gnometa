@@ -18,6 +18,7 @@ const Translator = new Lang.Class({
   Template: 'resource:///org/gnome/Gnometa/translator-template.ui',
   InternalChildren: [ 'error',
                       'image',
+                      'json-spinbutton',
                       'output-type',
                       'spinbutton',
                       'spinner',
@@ -34,6 +35,7 @@ const Translator = new Lang.Class({
 
     this._output_type.connect('notify::active', this._renderingChanged.bind(this));
     this._spinbutton.connect('notify::value', this._renderingChanged.bind(this));
+    this._json_spinbutton.connect('notify::value', this._renderingChanged.bind(this));
     this._textview = new TextView.TextView();
     this._textview_viewport.add(this._textview);
     this._treeview = new TreeView.TreeView();
@@ -149,10 +151,14 @@ const Translator = new Lang.Class({
     this._spinbutton.visible = !isString;
     this._treeview.get_parent().visible = !isString && this._output_type.active == 0;
     this._textview.get_parent().visible = isString || this._output_type.active == 1;
-    this._textview.sensitive = !!this._input;
+    this._textview.editable = !!this._input;
 
     this._treeview.setData(this._data);
     this._treeview.expand_all();
+
+    if (typeof this._data !== 'string')
+      this._textview.buffer.set_text(JSON.stringify(this._data === undefined ? null : this._data,
+                                                    null, this._json_spinbutton.value), -1);
   },
 
   getName: function() { return this._name; },
@@ -184,7 +190,6 @@ const Translator = new Lang.Class({
     } else {
       this._treeview.setData(data);
       this._treeview.expand_all();
-      this._textview.buffer.set_text(JSON.stringify(data === undefined ? null : data, null, 2), -1);
       this._textview.buffer.set_language(lang_manager.get_language('json'));
     }
     this._renderingChanged();
