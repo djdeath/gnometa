@@ -149,6 +149,7 @@ const Translator = new Lang.Class({
     this._spinbutton.visible = !isString;
     this._treeview.get_parent().visible = !isString && this._output_type.active == 0;
     this._textview.get_parent().visible = isString || this._output_type.active == 1;
+    this._textview.sensitive = !!this._input;
 
     this._treeview.setData(this._data);
     this._treeview.expand_all();
