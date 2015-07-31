@@ -16,6 +16,7 @@ const TreeView = new Lang.Class({
     this._callbacks = {};
 
     this.connect('row-activated', this._emitActivatedData.bind(this));
+    this.connect('move-cursor', this._emitActivatedData.bind(this));
   },
 
   getDataController: function() { return this._controller; },
@@ -92,7 +93,8 @@ const TreeView = new Lang.Class({
     this._controller.render(iter, this._data);
   },
 
-  _emitActivatedData: function(wid, path, col) {
+  _emitActivatedData: function() {
+    let [path, col] = this.get_cursor();
     let p = path.copy();
     while (this._dataMap[p.to_string()] === undefined && p.up());
 
