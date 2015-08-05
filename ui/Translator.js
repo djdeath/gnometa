@@ -17,10 +17,10 @@ const Translator = new Lang.Class({
   Extends: Gtk.Box,
   Template: 'resource:///org/gnome/Gnometa/translator-template.ui',
   InternalChildren: [ 'error',
+                      'depth-spinbutton',
                       'image',
                       'json-spinbutton',
                       'output-type',
-                      'spinbutton',
                       'spinner',
                       'textview-viewport',
                       'treeview-viewport'],
@@ -34,7 +34,7 @@ const Translator = new Lang.Class({
     this._callbacks = {};
 
     this._output_type.connect('notify::active', this._renderingChanged.bind(this));
-    this._spinbutton.connect('notify::value', this._renderingChanged.bind(this));
+    this._depth_spinbutton.connect('notify::value', this._renderingChanged.bind(this));
     this._json_spinbutton.connect('notify::value', this._renderingChanged.bind(this));
     this._textview = new TextView.TextView();
     this._textview_viewport.add(this._textview);
@@ -62,7 +62,7 @@ const Translator = new Lang.Class({
           if (typeof data[i] != 'object') {
             let s = data.constructor == Array ? '' + data[i] : i + ' : ' + data[i];
             this.set(iter, data, [s]);
-          } else if (self._spinbutton.value < 0 || this._depth < self._spinbutton.value)
+          } else if (self._depth_spinbutton.value < 0 || this._depth < self._depth_spinbutton.value)
             this.render(iter, data[i]);
         }
         this._depth--;
@@ -148,7 +148,6 @@ const Translator = new Lang.Class({
     let isString = typeof this._data === 'string';
 
     this._output_type.sensitive = !isString;
-    this._spinbutton.visible = !isString;
     this._treeview.get_parent().visible = !isString && this._output_type.active == 0;
     this._textview.get_parent().visible = isString || this._output_type.active == 1;
     this._textview.editable = !!this._input;
