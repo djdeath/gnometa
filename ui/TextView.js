@@ -25,7 +25,7 @@ const TextView = new Lang.Class({
     'hint': { name: 'hint',
               weight: Pango.Weight.BOLD },
     'error': { name: 'error',
-               background: 'red' },
+               background: '#f2dede' },
   },
 
   _init: function(args) {
