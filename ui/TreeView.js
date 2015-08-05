@@ -95,6 +95,8 @@ const TreeView = new Lang.Class({
 
   _emitActivatedData: function() {
     let [path, col] = this.get_cursor();
+    if (!path) return;
+
     let p = path.copy();
     while (this._dataMap[p.to_string()] === undefined && p.up());
 
