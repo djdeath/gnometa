@@ -33,7 +33,7 @@ commands.compile = function(name, input) {
     OMeta.BSOMetaJSParser.matchAll(Utils.loadFile(baseFile),
                                    'topLevel', undefined),
     'trans', undefined);
-  OMeta.startFileSourceMap('');
+  OMeta.startFileSourceMap(name);
   let structure = OMeta.BSOMetaJSParser.matchAllStructure(input, 'topLevel', undefined);
   let code = OMeta.BSOMetaJSTranslator.match(structure.value, 'trans', undefined);
 
@@ -78,10 +78,15 @@ let _getMatchStructure = function(structure, startOffset, endOffset) {
   } while (child);
   return matches;
 };
-let _bestNamedStructureMatch = function(matches) {
-  for (let i = 0; i < matches.length; i++)
-    if ((matches[i].stop - matches[i].start) >= 2)
-      return [i, matches[i]];
+let _bestNamedStructureMatch = function(compiler, matches) {
+  let compilerFilename = compiler.map.filenames[compiler.map.filenames.length - 1];
+  for (let i = 0; i < matches.length; i++) {
+    let match = matches[i];
+    let map = compiler.map.map[match.id];
+    if (map && compiler.map.filenames[map[0]] === compilerFilename) {
+      return [i, match];
+    }
+  }
   return [matches.length - 1, matches[matches.length - 1]];
 };
 let _findStructure = function(structure, startOffset, endOffset) {
@@ -109,8 +114,9 @@ commands.matchStructure = function(input, start, end, output) {
 };
 
 // Get the best match.
-commands.getBestMatch = function(input) {
-  let ret = _bestNamedStructureMatch(_matchedStructures[input]);
+commands.getBestMatch = function(name) {
+  let ret = _bestNamedStructureMatch(_compilers[name],
+                                     _matchedStructures[name]);
   return [ret[0], Utils.copyObjectBut(ret[1], 'children')];
 };
 

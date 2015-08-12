@@ -1,6 +1,7 @@
 const Lang = imports.lang;
 const GObject = imports.gi.GObject;
 const Gio = imports.gi.Gio;
+const Gdk = imports.gi.Gdk;
 const Gtk = imports.gi.Gtk;
 const GtkSource = imports.gi.GtkSource;
 
@@ -38,6 +39,12 @@ const Translator = new Lang.Class({
     this._json_spinbutton.connect('notify::value', this._renderingChanged.bind(this));
     this._textview = new TextView.TextView();
     this._textview_viewport.add(this._textview);
+    this._textview.connect('selection-changed', function(wid, start, end) {
+      this._queryData(start, end, true);
+    }.bind(this));
+    this._textview.connect('select-all', function(wid, ev) {
+      this._queryData(0, this._textview.getData().length, false);
+    }.bind(this));
     this._treeview = new TreeView.TreeView();
     this._treeview_viewport.add(this._treeview);
     let self = this;
@@ -105,7 +112,7 @@ const Translator = new Lang.Class({
       UiHelper.commands.translate(this._name, data, this._rule, this._name, function(error, ret) {
         this.setError(error);
         if (!error && this._input) FileSaver.delayedSaveFile(this._input, data);
-        this._emit('changed', ret);
+        this._emit('changed', ret === undefined ? null : ret);
         ac.done();
       }.bind(this));
     }.bind(this));
@@ -135,6 +142,55 @@ const Translator = new Lang.Class({
           this._translateData(this._data);
           return finish(null);
         }.bind(this));
+      }.bind(this));
+    }.bind(this));
+  },
+
+  _ometaFile: function(id) {
+    if (id < 0) return null;
+    let sitem = this._map.map[id];
+    let filename = this._map.filenames[sitem[0]];
+    return this._compiler ? filename : ('../' + filename);
+  },
+
+  _ometaRange: function(id) {
+    if (id < 0) return [0, 0];
+    let sitem = this._map.map[id];
+    return [sitem[1], sitem[2]];
+  },
+
+  _ometaText: function(id) {
+    if (id < 0) return '';
+    let range = this._ometaRange(id);
+    return Utils.loadFile(this._ometaFile(id)).slice(range[0], range[1]);
+  },
+
+  _compilerArgs: function(highlightId, hintId) {
+    let ret = [this._compiler, Utils.loadFile(this._compiler)];
+    if (this._ometaFile(highlightId) == this._compiler)
+      ret = ret.concat(this._ometaRange(highlightId));
+    else
+      ret = ret.concat([0, 0]);
+    if (hintId && ret[0] === this._ometaFile(hintId))
+      ret = ret.concat(this._ometaRange(hintId));
+    else
+      ret = ret.concat([0, 0]);
+    return ret;
+  },
+
+  _queryData: function(start, end, highlight) {
+    UiHelper.commands.matchStructure(this._name, start, end, this._name, function(error, ret) {
+      this._textview.removeSelection();
+      UiHelper.commands.getBestMatch(this._name, function(error, ret) {
+        if (error) return Utils.printError(error);
+        let [idx, match] = ret;
+        _structureTreeIdx = idx;
+        if (highlight)
+          this._textview.hightlightRange('highlight', match.start, match.stop);
+        else
+          this._textview.removeAllHighlight();
+        this._compilerView.setData.apply(this._compilerView, this._compilerArgs(match.id));
+        this._emit('changed', match.value);
       }.bind(this));
     }.bind(this));
   },
@@ -187,9 +243,10 @@ const Translator = new Lang.Class({
       this._textview.buffer.set_text(data, -1);
       this._textview.buffer.set_language(lang_manager.get_language('js'));
     } else {
+      this._textview.buffer.set_text('', -1);
+      this._textview.buffer.set_language(lang_manager.get_language('json'));
       this._treeview.setData(data);
       this._treeview.expand_all();
-      this._textview.buffer.set_language(lang_manager.get_language('json'));
     }
     this._renderingChanged();
     this._translateData(this._data);
