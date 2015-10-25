@@ -110,8 +110,11 @@ let BSJSParser = ometa(BaseStrParser) {
   sc           = spacesNoNl ('\n' | &'}' | end)
                | ";",
   varBinder    = "var" | "let" | "const",
-  varBinding   = "name":n ( "=" expr
-                          | empty -> [#get, 'undefined'] ):v                         -> [#assignVar, n, v],
+  varBinding   = ( "name":n                     -> [#assignVar, n]
+                 | "[" enum(#formal, ','):ns "]"  -> [#assignDesctruct, ns] ):assign
+                 ( "=" expr:e -> e
+                   | empty -> [#get, 'undefined'] ):v                                -> assign.concat([v]),
+
   block        = "{" srcElems:ss "}"                                                 -> [#begin, ss],
   stmt         = block
                | varBinder:decl listOf(#varBinding, ','):bs sc                       -> [#beginVars, decl].concat(bs)
@@ -209,6 +212,7 @@ let BSJSTranslator = ometa {
   call     trans:fn trans*:args                         -> (fn + '(' + args.join(',') + ')'),
   send     :msg trans:recv trans*:args                  -> (recv + '.' + msg + '(' + args.join(',') + ')'),
   new      trans:x                                      -> ('new ' + x),
+  assignDesctruct :names trans:val                      -> this.genDescructAssign(names, val),
   assignVar :name trans:val                             -> (name + '=' + val),
   noAssignVar :name                                     -> name,
   throw    trans:x                                      -> ('throw ' + x),
@@ -219,6 +223,20 @@ let BSJSTranslator = ometa {
   case     trans:x trans:y                              -> ('case ' + x + ': '+ y),
   default          trans:y                              -> ('default: ' + y)
 };
+BSJSTranslator.genDestructId = function() {
+  if (this._desctructId === undefined)
+    this._desctructId = 0;
+  return this._desctructId++;
+}
+BSJSTranslator.genDescructAssign = function(names, value) {
+  let tmpName = '$_desc' + this.genDestructId();
+  let ret = tmpName + '=' + value;
+  for (let i = 0; i < names.length; i++)
+    ret += ',' + names[i] + '=' + tmpName + '[' + i + ']';
+  return ret;
+};
+
+
 
 let copyObject = function(obj) {
   let ret = {};
