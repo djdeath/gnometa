@@ -11,7 +11,7 @@ const TreeView = new Lang.Class({
     this.parent(args);
     this.enable_tree_lines = true;
     this.headers_visible = false;
-    this.activate_on_single_click = true;
+    //this.activate_on_single_click = true;
     this.visible = true;
     this._callbacks = {};
 

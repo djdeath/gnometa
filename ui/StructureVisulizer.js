@@ -140,7 +140,8 @@ let start = function() {
   }
 
   //
-  let translatorsTreeview = new TreeView.TreeView({ activate_on_single_click: true });
+  let translatorsTreeview = new TreeView.TreeView({ activate_on_single_click: true,
+                                                    hover_selection: true });
   widget('translators-popover').add(translatorsTreeview);
   translatorsTreeview.setDataController({
     getModel: function() {
