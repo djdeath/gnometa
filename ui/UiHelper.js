@@ -83,7 +83,7 @@ let _bestNamedStructureMatch = function(compiler, matches) {
   for (let i = 0; i < matches.length; i++) {
     let match = matches[i];
     let map = compiler.map.map[match.id];
-    if (map && compiler.map.filenames[map[0]] === compilerFilename) {
+    if (map) {
       return [i, match];
     }
   }

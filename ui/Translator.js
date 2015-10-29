@@ -93,8 +93,9 @@ const Translator = new Lang.Class({
       this._compilerView.connect('changed', function(wid, text) {
         this._rebuildCompiler.run(text, true);
       }.bind(this));
-      this._rebuildCompiler.run(this._compilerView.getData(), false);
     }
+    if (this._rebuildCompiler)
+      this._rebuildCompiler.run(this._compilerView.getData(), false);
     if (this._input) {
       this._textview.buffer.connect('changed', function() {
         this._data = this._textview.getData();
@@ -179,6 +180,8 @@ const Translator = new Lang.Class({
   },
 
   _queryData: function(start, end, highlight) {
+    if (this._name == '')
+      return;
     UiHelper.commands.matchStructure(this._name, start, end, this._name, function(error, ret) {
       this._textview.removeSelection();
       UiHelper.commands.getBestMatch(this._name, function(error, ret) {
