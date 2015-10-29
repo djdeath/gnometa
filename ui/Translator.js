@@ -167,8 +167,9 @@ const Translator = new Lang.Class({
   },
 
   _compilerArgs: function(highlightId, hintId) {
-    let ret = [this._compiler, Utils.loadFile(this._compiler)];
-    if (this._ometaFile(highlightId) == this._compiler)
+    let file = this._compiler ? this._compiler : this._ometaFile(highlightId);
+    let ret = [this._compiler, Utils.loadFile(file)];
+    if (this._ometaFile(highlightId) == file)
       ret = ret.concat(this._ometaRange(highlightId));
     else
       ret = ret.concat([0, 0]);
