@@ -25,5 +25,6 @@ let BaseStrParser = ometa {
                       | -> [],
   enum :rule :delim   = listOf(rule, delim):v (token(delim) | empty) -> v,
 
-  fromTo :x :y = <seq(x) (~seq(y) char)* seq(y)>
+  fromTo :x :y = <seq(x) (~seq(y) char)* seq(y)>,
+  fromToOrEnd :x :y = <seq(x) (~(seq(y) | end) char)* (seq(y) | end)>,
 };
