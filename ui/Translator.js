@@ -131,7 +131,7 @@ const Translator = new Lang.Class({
 
         this._map = ret;
         if (this._compiler)
-          this._map.filenames[this._map.filenames.length - 1] = this._filename;
+          this._map.filenames[this._map.filenames.length - 1] = this._compiler;
         else {
           // Using OMeta.
           this._translateData(this._data);
