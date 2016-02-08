@@ -69,8 +69,10 @@ const Translator = new Lang.Class({
           if (typeof data[i] != 'object') {
             let s = data.constructor == Array ? '' + data[i] : i + ' : ' + data[i];
             this.set(iter, data, [s]);
-          } else if (self._depth_spinbutton.value < 0 || this._depth < self._depth_spinbutton.value)
+          } else if (self._depth_spinbutton.value < 0 || this._depth < self._depth_spinbutton.value) {
+            this.set(iter, data, [i + ' :']);
             this.render(iter, data[i]);
+          }
         }
         this._depth--;
       },
