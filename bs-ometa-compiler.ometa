@@ -1,6 +1,7 @@
 let BSSemActionParser = ometa(BSJSParser) {
-  jsOmetaKeyword :k = spaces '@' iName:n ?(k == n)   -> k,
-  primExprHd = jsOmetaKeyword('location')     -> [#Location]
+  jsOmetaKeyword :k = spaces '@' iName:n ?(k == n)         -> k,
+  primExprHd = jsOmetaKeyword('location') "(" iName:n ")"  -> [#Location, n]
+             | jsOmetaKeyword('location')                  -> [#Location, null]
              | ^primExprHd,
 
   curlySemAction = "{" expr:r sc "}"          -> r
@@ -95,7 +96,9 @@ BSOMetaParser.hexDigits = "0123456789abcdef";
 
 
 let BSSemActionTranslator = ometa(BSJSTranslator) {
-  Location                                 -> ['this._extractLocation($r', this._storeVal, ')'].join(''),
+  Location :n !(n === null ?
+                ('$r' + this._storeVal) :
+                ('$vars.' + n)):v          -> ['this._extractLocation(', v, ')'].join(''),
 
   get :n                                   -> this._renameVariable(n),
   name :n                                  -> this._renameVariable(n),

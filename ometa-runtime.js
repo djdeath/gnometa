@@ -293,7 +293,7 @@ resetSourceMap();
 let OMeta = {
   _extractLocation: function(retVal) {
     return { start: retVal.start,
-             stop: this.input.idx, };
+             stop: (retVal.stop !== null ? retVal.stop : this.input.idx), };
   },
   _startStructure: function(id, rule) {
     return {

@@ -1,0 +1,21 @@
+const JSUnit = imports.jsUnit;
+
+function testLocationOf() {
+  let LocationOf = ometa {
+    char = anything:r ?(typeof r === "string" && r.length == 1) -> r,
+
+    space = char:r ?(r.charCodeAt(0) <= 32) -> r,
+    spaces = space*,
+
+    token :tok = spaces seq(tok),
+
+    top = "aaa" "bbb":b "ccc" -> @location(b),
+  };
+
+  var loc = LocationOf.matchAll('aaa  bbb ccc', 'top');
+
+  JSUnit.assertEquals("start location is 3", 3, loc.start);
+  JSUnit.assertEquals("stop location is 8", 8, loc.stop);
+}
+
+JSUnit.gjstestRun(this, JSUnit.setUp, JSUnit.tearDown);
