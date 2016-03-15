@@ -115,7 +115,7 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
            popLocation] -> [loc].concat(ans),
 
   andReturn :l = notLast(#storeSomething)*:xs
-                 storeSomethingThatReturns:y              -> [l, 'And'].concat(xs.concat([y])),
+                 somethingThatReturns:y                           -> [l, 'And'].concat(xs.concat([y])),
 
   somethingThatReturns = [ :l exactly(#And) andReturn(l):ans ]    -> ans
                        | [ :l exactly(#And) end ]                 -> [null, 'ReturnStructure', [l, 'And']]
@@ -139,10 +139,9 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
                                 apply(t):ans
                                 popLocation ]             -> [loc, 'Store', [loc].concat(ans)]
                             | trans:x,
-  storeSomethingThatReturns = somethingThatReturns:x,
 
   functioned = somethingThatCanPass:x                     -> [x[0], 'Function', [null, 'Return', x]]
-             | storeSomethingThatReturns:x                -> [x[0], 'FunctionStructure', x],
+             | somethingThatReturns:x                     -> [x[0], 'FunctionStructure', x],
 
   Or         functioned*:xs                               -> ['Or'             ].concat(xs),
   XOr        functioned*:xs                               -> ['XOr'            ].concat(xs),
