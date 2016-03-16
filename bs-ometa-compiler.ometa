@@ -104,7 +104,7 @@ let BSSemActionTranslator = ometa(BSJSTranslator) {
 };
 BSSemActionTranslator._renameVariable = function(name) {
   if (name != '$elf' && this._toRename[name])
-    return '$vars.' + name;
+    return '$vars.' + name + '.value';
   return name;
 };
 
@@ -136,9 +136,7 @@ let BSOMetaTranslator = ometa {
              { this._storeVar--; }         -> this.jumpTableCode(cases),
   Interleave intPart*:xs                   -> ['this._interleave(', xs.join(','), ')']                                   .join(''),
 
-  Function { this._storeVar++; }
-           transFn:x
-           { this._storeVar--; }           -> ['function(){', x, ';}']                                                   .join(''),
+  Function transFn:x                       -> ['function(){', x, ';}']                                                   .join(''),
   FunctionStructure { this._storeVar++; }
            transFn+:xs
            { this._storeVar--; }           -> ['function(){var $r', this._storeVar + 1,
@@ -150,8 +148,10 @@ let BSOMetaTranslator = ometa {
   Parenthesis     transFn:x                -> ['(', x, ')']                                                              .join(''),
   Store           transFn:x                -> ['this._appendStructure($r', this._storeVar, ',',
                                                x, ',', this.getLocationId(), ')']                                        .join(''),
+  Wrap            transFn:x                -> ['this._generateStructure($r', this._storeVar, ',',
+                                               x, ',', this.getLocationId(), ')']                                        .join(''),
   Js              :locals transJs(locals),
-  PopArg          :n                       -> ['$vars.', n, '=this._getStructureValue(this.anything())']                 .join(''),
+  PopArg          :n                       -> ['$vars.', n, '=this.anything()']                                          .join(''),
 
   Rule       :name {this.rName = name;
                     this._storeVar = 0; }

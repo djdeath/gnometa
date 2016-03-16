@@ -305,22 +305,32 @@ let OMeta = {
       value: null,
     };
   },
-  _appendStructure: function(structure, child, id) {
-    if (!child.call)
-      child.call = id;
-    structure.children.push(child);
-    return (structure.value = child.value);
-  },
-  _getStructureValue: function(structure) {
-    return structure.value;
-  },
   _endStructure: function(structure) {
     structure.stop = this.input.idx;
     return structure;
   },
+  _appendStructure: function(structure, child, id) {
+    if (!child.call)
+      child.call = id;
+    structure.children.push(child);
+    structure.value = child.value;
+    return child;
+  },
   _forwardStructure: function(structure, id) {
     structure.call = id;
     return structure;
+  },
+  _generateStructure: function(structure, value, id) {
+    return this._appendStructure(structure, {
+      id: id,
+      start: this.input.idx,
+      stop: this.input.idx,
+      children: [],
+      value: value,
+    }, undefined);
+  },
+  _getStructureValue: function(structure) {
+    return structure.value;
   },
 
   _apply: function(rule) {

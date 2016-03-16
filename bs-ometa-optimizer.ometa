@@ -114,31 +114,47 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
            apply(t):ans
            popLocation] -> [loc].concat(ans),
 
-  andReturn :l = notLast(#storeSomething)*:xs
-                 somethingThatReturns:y                           -> [l, 'And'].concat(xs.concat([y])),
-
-  somethingThatReturns = [ :l exactly(#And) andReturn(l):ans ]    -> ans
-                       | [ :l exactly(#And) end ]                 -> [null, 'SetReturn', [l, 'And']]
-                       | [ :l generatesStructure:t apply(t):ans ] -> [null, 'SetReturn', [l, 'Store', [l].concat(ans)]]
-                       | [ :l exactly(#Set) apply(#Set):ans ]     -> [null, 'SetReturn', [l, 'Parenthesis', [l].concat(ans)]]
-                       | trans:x                                  -> [null, 'SetReturn', x],
-
   generatesStructure = #Or | #XOr | #Opt | #Many | #Many1 | #Not
                      | #Lookahead | #Form | #ConsBy | #IdxConsBy
-                     | #App | #JumpTable | #Interleave,
+                     | #App | #JumpTable | #Interleave | #Set | #PopArg,
+
+  storeSomething =
+    // Special case for poping an argument off the stack. No need to
+    // show that in the structure.
+      [ :loc exactly(#PopArg)
+        pushLocation(loc)
+        apply(#PopArg):ans
+        popLocation ]             -> [loc].concat(ans)
+    // Special case also for setting a variable. That should be
+    // handled within the assignment.
+    | [ :loc exactly(#Set)
+        pushLocation(loc)
+        apply(#Set):ans
+        popLocation ]             -> [loc].concat(ans)
+    | [ :loc generatesStructure:t
+        pushLocation(loc)
+        apply(t):ans
+        popLocation ]             -> [loc, 'Store', [loc].concat(ans)]
+    | trans:x                     -> [x[0], 'SetReturn', x],
+
+  // We're inside a function that has its own structure.
+  somethingThatReturns =
+    // A list of 'And' elements which we attach to the structre and
+    // the last element which we set the value onto the current
+    // structure.
+      [ :l exactly(#And) end ]                 -> [l, 'SetReturn', [l, 'And']]
+    | [ :l exactly(#And) storeSomething*:xs ]  -> [l, 'And'].concat(xs)
+    // Anything that generates structure just need to be attached to
+    // the structure.
+    | [ :l generatesStructure:t apply(t):ans ] -> [l, 'Store', [l].concat(ans)]
+    // Anything else gives a value which we need to set on the current
+    // structure.
+    | [ :l :t apply(t):ans ]                   -> [null, 'SetReturn', [l].concat(ans)],
 
   somethingThatCanPass      = [ :loc generatesStructure:t
-                                ?(this[t] != undefined)
                                 pushLocation(loc)
                                 apply(t):ans
                                 popLocation ]             -> [loc].concat(ans),
-
-  storeSomething            = [ :loc generatesStructure:t
-                                ?(this[t] != undefined)
-                                pushLocation(loc)
-                                apply(t):ans
-                                popLocation ]             -> [loc, 'Store', [loc].concat(ans)]
-                            | trans:x,
 
   functioned = somethingThatCanPass:x                     -> [x[0], 'Function', [null, 'Return', x]]
              | somethingThatReturns:x                     -> [x[0], 'FunctionStructure', x],
@@ -157,18 +173,23 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
   JumpTable  ([:c somethingThatReturns:e] -> [c, e])*:ces -> ['JumpTable'      ].concat(ces),
   Interleave ([:m functioned:p] -> [m, p])*:xs            -> ['Interleave'     ].concat(xs),
 
+
+  setRight = [ :loc generatesStructure:t
+               pushLocation(loc)
+               apply(t):ans
+               popLocation ]                              -> [loc, 'Store', [loc].concat(ans)]
+            | trans:x                                     -> [x[0], 'Wrap', x],
+  Set        :n setRight:v                                -> ['Set', n, v],
+
   // Do not generate structure :
   Pred       :expr                                        -> ['Pred', expr],
-  Set        :n storeSomething:v                          -> ['Set', n, v],
-
   Js         :locals :code                                -> ['Js', locals, code],
   Location                                                -> ['Location'],
   PopArg     :n                                           -> ['PopArg', n],
 
   Rule       :name
              ( somethingThatCanPass:b
-               -> [null, 'SetReturn',
-                   [b[0], 'Store', b]]
+               -> [b[0], 'Store', b]
              | somethingThatReturns ):body                -> ['Rule', name, body]
 };
 BSFunctionOptimization.initialize = function() { this._locations = []; };
@@ -183,6 +204,8 @@ let BSOMetaOptimizer = ometa {
                        ( BSAssociativeOptimization.optimize(r):r
                        | BSJumpTableOptimization.optimize(r):r )*
 
+//  { log('base: ' + JSON.stringify(r)); }
                        BSFunctionOptimization.optimize(r):r
+//  { log('opt: ' + JSON.stringify(r)); }
     -> r
 };
