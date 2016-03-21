@@ -149,7 +149,7 @@ let BSJSParser = ometa(BaseStrParser) {
                | "with" "(" expr:x ")" stmt:s                                        -> [#with, x, s]
                | expr:e sc                                                           -> e
                | ";"                                                                 -> [#get, "undefined"],
-  srcElem      = "function" "name":n funcRest:f                                      -> [#assignVar, n, f]
+  srcElem      = "function" "name":n funcRest:f                                      -> [#beginVars, #var, [#assignVar, n, f]]
                | stmt,
   srcElems     = srcElem*:ss                                                         -> [#beginTop].concat(ss),
 
