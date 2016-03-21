@@ -1,0 +1,11 @@
+// Some helpers
+let Test = ometa {
+  AssignFromJsNoReturn  = { null }:v,
+  AssignFromJsAndReturn = { null }:v -> v,
+  PredicateNoReturn     = ?(a >= 0),
+
+  fromToOrEnd :x :y     = -> x,
+
+  rule                  = &(ruleName:n) !(this.locals = {}) rulePart(n):x ("," rulePart(n))*:xs -> xs,
+
+};

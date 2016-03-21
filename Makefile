@@ -1,5 +1,8 @@
+NULL =
+
 OMETA_RUNTIME = \
-	ometa-runtime.js
+	ometa-runtime.js \
+	$(NULL)
 
 OMETA_SOURCES = \
 	ometa-base.ometa \
@@ -7,7 +10,8 @@ OMETA_SOURCES = \
 	bs-js-compiler.ometa \
 	bs-ometa-compiler.ometa \
 	bs-ometa-js-compiler.ometa \
-	bs-ometa-optimizer.ometa
+	bs-ometa-optimizer.ometa \
+	$(NULL)
 
 OMETA_STEP_GEN = $(OMETA_SOURCES:.ometa=.js.new)
 OMETA_GEN = $(OMETA_SOURCES:.ometa=.js)
@@ -29,6 +33,17 @@ GCR = $(OO) echo " GLIB_COMPILE_RESOURCES " $@; glib-compile-resources
 gen: $(OMETA_STEP_GEN)
 
 commit: $(OMETA_GEN)
+
+OMETA_TEST_FILES = \
+	tests/location-of.ometa \
+	$(NULL)
+OMETA_TESTS = $(OMETA_TEST_FILES:.ometa=.js)
+
+$(OMETA_TEST_DIR)/%.js: %.ometa
+	$(OO) $(OMETA) -b $< > $@
+
+tests: $(OMETA_TESTS)
+	$(OO) for i in $+; do gjs $i; done
 
 ui/standalone.js: $(OMETA_SOURCES) $(OMETA_RUNTIME)
 	$(OO) $(OMETA) -b $(OMETA_SOURCES) -s $@.map -o $@
@@ -53,7 +68,7 @@ install:
 	$(OO) install -t $(PREFIX)/share/gnometa gnometa
 
 clean:
-	$(OO) rm -f $(OMETA_STEP_GEN)
+	$(OO) rm -f $(OMETA_STEP_GEN) $(OMETA_TESTS)
 	$(OO) rm -f *~ ui/*~
 
 reset:
