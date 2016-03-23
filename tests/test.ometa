@@ -1,11 +1,31 @@
-// Some helpers
-let Test = ometa {
-  AssignFromJsNoReturn  = { null }:v,
-  AssignFromJsAndReturn = { null }:v -> v,
-  PredicateNoReturn     = ?(a >= 0),
+const JSUnit = imports.jsUnit;
 
-  fromToOrEnd :x :y     = -> x,
+function testCornerCases() {
+  let predicateValue = 0;
 
-  rule                  = &(ruleName:n) !(this.locals = {}) rulePart(n):x ("," rulePart(n))*:xs -> xs,
+  let Test = ometa {
+    AssignFromJsNoReturn  = { 42 }:v,
+    AssignFromJsAndReturn = { 42 }:v -> v,
+    PredicateNoReturn     = ?(predicateValue >= 0),
 
-};
+    fromToOrEnd :x :y     = -> x,
+
+    rule                  = &(ruleName:n) !(this.locals = {}) rulePart(n):x ("," rulePart(n))*:xs -> xs,
+  };
+
+  JSUnit.assertEquals('AssignFromJsNoReturn returns 42',
+                      42, LocationOf.matchAll('', 'AssignFromJsNoReturn'));
+  JSUnit.assertEquals('AssignFromJsAndReturn returns 42',
+                      42, LocationOf.matchAll('', 'AssignFromJsAndReturn'));
+
+  JSUnit.assertRaises('PredicateNoReturn fails with a value < 0', function() {
+    predicateValue = -1;
+    LocationOf.matchAll('', 'PredicateNoReturn');
+  });
+
+  predicateValue = 1;
+  JSUnit.assertEquals('PredicateNoReturn return true',
+                      trie, LocationOf.matchAll('', 'PredicateNoReturn'));
+}
+
+JSUnit.gjstestRun(this, JSUnit.setUp, JSUnit.tearDown);
