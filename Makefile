@@ -24,6 +24,28 @@ OO = $(O$(V))
 OMETA = $(OO) echo " GEN " $@; ./gnometa
 GCR = $(OO) echo " GLIB_COMPILE_RESOURCES " $@; glib-compile-resources
 
+OMETA_TEST_FILES = \
+	tests/location-of.ometa \
+	tests/test.ometa \
+	$(NULL)
+OMETA_TESTS_FILES_JS = $(patsubst %.ometa,%.js,$(OMETA_TEST_FILES))
+OMETA_TESTS = $(patsubst tests/%.ometa,%,$(OMETA_TEST_FILES))
+
+define test_rules
+tests/$(1).js: tests/$(1).ometa
+	$$(OO) $$(OMETA) -b tests/$(1).ometa > tests/$(1).js
+
+$(1)-run: tests/$(1).js
+	$$(OO) gjs tests/$(1).js
+endef
+
+$(foreach t,$(OMETA_TESTS),$(eval $(call test_rules,$(t))))
+
+tests: $(OMETA_TESTS_FILES_JS)
+#$(patsubst %,%-build,$(OMETA_TESTS))
+
+run-tests: $(patsubst %,%-run,$(OMETA_TESTS))
+
 %.js.new: %.ometa
 	$(OMETA) $< > $@
 
@@ -33,17 +55,6 @@ GCR = $(OO) echo " GLIB_COMPILE_RESOURCES " $@; glib-compile-resources
 gen: $(OMETA_STEP_GEN)
 
 commit: $(OMETA_GEN)
-
-OMETA_TEST_FILES = \
-	tests/location-of.ometa \
-	$(NULL)
-OMETA_TESTS = $(OMETA_TEST_FILES:.ometa=.js)
-
-$(OMETA_TEST_DIR)/%.js: %.ometa
-	$(OO) $(OMETA) -b $< > $@
-
-tests: $(OMETA_TESTS)
-	$(OO) for i in $+; do gjs $i; done
 
 ui/standalone.js: $(OMETA_SOURCES) $(OMETA_RUNTIME)
 	$(OO) $(OMETA) -b $(OMETA_SOURCES) -s $@.map -o $@
@@ -68,7 +79,7 @@ install:
 	$(OO) install -t $(PREFIX)/share/gnometa gnometa
 
 clean:
-	$(OO) rm -f $(OMETA_STEP_GEN) $(OMETA_TESTS)
+	$(OO) rm -f $(OMETA_STEP_GEN) $(OMETA_TESTS_FILES_JS)
 	$(OO) rm -f *~ ui/*~
 
 reset:

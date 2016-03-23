@@ -14,18 +14,18 @@ function testCornerCases() {
   };
 
   JSUnit.assertEquals('AssignFromJsNoReturn returns 42',
-                      42, LocationOf.matchAll('', 'AssignFromJsNoReturn'));
+                      42, Test.matchAll('', 'AssignFromJsNoReturn'));
   JSUnit.assertEquals('AssignFromJsAndReturn returns 42',
-                      42, LocationOf.matchAll('', 'AssignFromJsAndReturn'));
+                      42, Test.matchAll('', 'AssignFromJsAndReturn'));
 
   JSUnit.assertRaises('PredicateNoReturn fails with a value < 0', function() {
     predicateValue = -1;
-    LocationOf.matchAll('', 'PredicateNoReturn');
+    Test.matchAll('', 'PredicateNoReturn');
   });
 
   predicateValue = 1;
   JSUnit.assertEquals('PredicateNoReturn return true',
-                      trie, LocationOf.matchAll('', 'PredicateNoReturn'));
+                      true, Test.matchAll('', 'PredicateNoReturn'));
 }
 
 JSUnit.gjstestRun(this, JSUnit.setUp, JSUnit.tearDown);
