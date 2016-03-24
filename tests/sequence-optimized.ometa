@@ -9,8 +9,6 @@ function testSequenceOptimized() {
 
   JSUnit.assertEquals("value return inside the structure is correct",
                       'aaabbbccc', struct.value);
-  JSUnit.assertEquals("there is only one children when optimized",
-                      1, struct.children.length);
 }
 
 JSUnit.gjstestRun(this, JSUnit.setUp, JSUnit.tearDown);
