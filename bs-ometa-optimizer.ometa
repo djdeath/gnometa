@@ -204,8 +204,6 @@ let BSOMetaOptimizer = ometa {
                        ( BSAssociativeOptimization.optimize(r):r
                        | BSJumpTableOptimization.optimize(r):r )*
 
-//  { log('base: ' + JSON.stringify(r)); }
                        BSFunctionOptimization.optimize(r):r
-//  { log('opt: ' + JSON.stringify(r)); }
     -> r
 };
