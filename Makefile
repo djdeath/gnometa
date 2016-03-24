@@ -26,6 +26,7 @@ GCR = $(OO) echo " GLIB_COMPILE_RESOURCES " $@; glib-compile-resources
 
 OMETA_TEST_FILES = \
 	tests/location-of.ometa \
+	tests/sequence-optimized.ometa \
 	tests/test.ometa \
 	$(NULL)
 OMETA_TESTS_FILES_JS = $(patsubst %.ometa,%.js,$(OMETA_TEST_FILES))
