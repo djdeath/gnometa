@@ -25,6 +25,7 @@ OMETA = $(OO) echo " GEN " $@; ./gnometa
 GCR = $(OO) echo " GLIB_COMPILE_RESOURCES " $@; glib-compile-resources
 
 OMETA_TEST_FILES = \
+	tests/jumptable-optimized.ometa \
 	tests/location-of.ometa \
 	tests/sequence-optimized.ometa \
 	tests/test.ometa \

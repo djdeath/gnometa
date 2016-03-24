@@ -1,0 +1,22 @@
+const JSUnit = imports.jsUnit;
+
+function testJumptableOptimized() {
+  let LocationOf = ometa {
+    rule = ``abc'' | ``ab'' | ``a''
+  };
+
+  var struct = LocationOf.matchAllStructure('abc', 'rule');
+
+  let structureDepth = function(st) {
+    let v = 0;
+    st.children.forEach(function(c) { v = Math.max(v, structureDepth(c)); });
+    return v + 1;
+  };
+
+  JSUnit.assertEquals("value return inside the structure is correct",
+                      'abc', struct.value);
+  JSUnit.assertTrue("depth of the structure is at least 3",
+                    3 < structureDepth(struct));
+}
+
+JSUnit.gjstestRun(this, JSUnit.setUp, JSUnit.tearDown);

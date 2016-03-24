@@ -63,7 +63,7 @@ let BSAssociativeOptimization = ometa(BSNullOptimization) {
 
 let BSSeqInliner = ometa(BSNullOptimization) {
   App        = 'seq'
-               [:l 'Js' :locals ['string' :s]] end
+               [:l exactly(#Js) :locals ['string' :s]] end
                seqString(s):cs setHelped              -> ['And'].concat(cs).concat([jsValue('string', s)])
              | :rule anything*:args                   -> ['App', rule].concat(args),
   inlineChar = BSOMetaParser.eChar:c                  -> [null, 'App', 'exactly', jsValue('string', c)],
@@ -78,18 +78,18 @@ let JumpTable = function(choiceOp, choice) {
   this.add(choice);
 };
 JumpTable.prototype.add = function(choice) {
-  var c = choice[0], t = choice[1];
+  var c = choice[0], t = choice[1], loc = t[0];
   if (this.choices[c]) {
     if (this.choices[c][0] == this.choiceOp)
       this.choices[c].push(t);
     else
-      this.choices[c] = [this.choiceOp, this.choices[c], t];
+      this.choices[c] = [loc, this.choiceOp, this.choices[c], t];
   }
   else
     this.choices[c] = t;
 };
-JumpTable.prototype.toTree = function() {
-  var r = ['JumpTable'], choiceKeys = ownPropertyNames(this.choices);
+JumpTable.prototype.toTree = function(location) {
+  var r = [location, 'JumpTable'], choiceKeys = ownPropertyNames(this.choices);
   for (var i = 0; i < choiceKeys.length; i += 1)
     r.push([choiceKeys[i], this.choices[choiceKeys[i]]]);
   return r;
@@ -97,10 +97,10 @@ JumpTable.prototype.toTree = function() {
 let BSJumpTableOptimization = ometa(BSNullOptimization) {
   Or  (jtChoices('Or')  | trans)*:cs -> ['Or'].concat(cs),
   XOr (jtChoices('XOr') | trans)*:cs -> ['XOr'].concat(cs),
-  quotedString  = [:l 'Js' ['string' :s ]] -> s,
+  quotedString  = [:l 'Js' :locals [ exactly('string') :s ]] -> s,
   jtChoice      = [:l 'And' [:l1 'App' 'exactly' quotedString:x] anything*:rest]           -> [x, [l, 'And'].concat(rest)]
-    |                       [:l1 'App' 'exactly' quotedString:x]                           -> [x, jsValue('string', x)],
-  jtChoices :op = jtChoice:c {new JumpTable(op, c)}:jt (jtChoice:c {jt.add(c)})* setHelped -> jt.toTree()
+                |           [:l1 'App' 'exactly' quotedString:x]                           -> [x, jsValue('string', x)],
+  jtChoices :op = jtChoice:c {new JumpTable(op, c)}:jt (jtChoice:c {jt.add(c)})* setHelped -> jt.toTree(this.location())
 };
 
 let BSFunctionOptimization = ometa(GenericMatcher) {

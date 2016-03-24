@@ -191,10 +191,10 @@ BSOMetaTranslator._optimizedCall = function(rule, args) {
 BSOMetaTranslator.jumpTableCode = function(cases) {
   var buf = new StringBuffer();
   buf.nextPutAll("(function(){var $r" + (this._storeVar + 1) + "=this._startStructure(-1);")
-  buf.nextPutAll("switch(this._appendStructure($r" + (this._storeVar + 1) + ",this._apply('anything'))){");
+  buf.nextPutAll("switch(this._appendStructure($r" + (this._storeVar + 1) + ",this._apply('anything')).value){");
   for (var i = 0; i < cases.length; i += 1)
     buf.nextPutAll("case " + cases[i][0] + ":" + cases[i][1] + ";break;");
-  buf.nextPutAll("default: throw fail}return this._endStructure($r" + (this._storeVar + 1) + ");}).call(this)");
+  buf.nextPutAll("default: throw fail;}return this._endStructure($r" + (this._storeVar + 1) + ");}).call(this)");
   return buf.contents();
 };
 BSOMetaTranslator.pushLocation = function(location) {
