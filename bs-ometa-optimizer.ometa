@@ -37,7 +37,6 @@ let BSNullOptimization = ometa {
   Interleave ([:m trans:p] -> [m, p])*:xs  -> ['Interleave'      ].concat(xs),
 
   Js         :locals :code                 -> ['Js', locals, code],
-  Location                                 -> ['Location'        ],
   PopArg     :n                            -> ['PopArg',     n   ],
 
   Rule       :name trans:body              -> ['Rule', name, body]
@@ -184,7 +183,6 @@ let BSFunctionOptimization = ometa(GenericMatcher) {
   // Do not generate structure :
   Pred       :expr                                        -> ['Pred', expr],
   Js         :locals :code                                -> ['Js', locals, code],
-  Location                                                -> ['Location'],
   PopArg     :n                                           -> ['PopArg', n],
 
   Rule       :name
