@@ -293,20 +293,20 @@ resetSourceMap();
 let OMeta = {
   _extractLocation: function(val) {
     return { start: val.start,
-             stop: (val.stop !== null ? val.stop : this.input.idx), };
+             stop: (val.stop !== null ? val.stop : this._input.idx), };
   },
   _startStructure: function(id, rule) {
     return {
       rule: rule,
       id: id,
-      start: this.input.idx,
+      start: this._input.idx,
       stop: null,
       children: [],
       value: null,
     };
   },
   _endStructure: function(structure) {
-    structure.stop = this.input.idx;
+    structure.stop = this._input.idx;
     return structure;
   },
   _appendStructure: function(structure, child, id) {
@@ -323,8 +323,8 @@ let OMeta = {
   _generateStructure: function(structure, value, id) {
     return this._appendStructure(structure, {
       id: id,
-      start: this.input.idx,
-      stop: this.input.idx,
+      start: this._input.idx,
+      stop: this._input.idx,
       children: [],
       value: value,
     }, undefined);
@@ -334,25 +334,25 @@ let OMeta = {
   },
 
   _apply: function(rule) {
-    var memoRec = this.input.memo[rule];
+    var memoRec = this._input.memo[rule];
     if (memoRec == undefined) {
-      var origInput = this.input,
+      var origInput = this._input,
           failer    = new Failer();
       if (this[rule] === undefined)
         throw new Error('tried to apply undefined rule "' + rule + '"');
-      this.input.memo[rule] = failer;
-      this.input.memo[rule] = memoRec = {ans: this[rule].call(this),
-                                         nextInput: this.input };
+      this._input.memo[rule] = failer;
+      this._input.memo[rule] = memoRec = {ans: this[rule].call(this),
+                                         nextInput: this._input };
       if (failer.used) {
-        var sentinel = this.input;
+        var sentinel = this._input;
         while (true) {
           try {
-            this.input = origInput;
+            this._input = origInput;
             var ans = this[rule].call(this);
-            if (this.input == sentinel)
+            if (this._input == sentinel)
               throw fail;
             memoRec.ans       = ans;
-            memoRec.nextInput = this.input;
+            memoRec.nextInput = this._input;
           } catch (f) {
             if (f != fail)
               throw f;
@@ -365,7 +365,7 @@ let OMeta = {
       throw fail;
     }
 
-    this.input = memoRec.nextInput;
+    this._input = memoRec.nextInput;
     return memoRec.ans;
   },
 
@@ -389,7 +389,7 @@ let OMeta = {
       ruleFn.apply(recv, Array.prototype.slice.call(arguments, 2, ruleFnArity + 2));
   },
   _prependInput: function(v) {
-    this.input = new OMInputStream(v, this.input);
+    this._input = new OMInputStream(v, this._input);
   },
 
   // if you want your grammar (and its subgrammars) to memoize parameterized rules, invoke this method on it:
@@ -397,14 +397,14 @@ let OMeta = {
     this._prependInput = function(v) {
       var newInput;
       if (isImmutable(v)) {
-        newInput = this.input[getTag(v)];
+        newInput = this._input[getTag(v)];
         if (!newInput) {
-          newInput = new OMInputStream(v, this.input);
-          this.input[getTag(v)] = newInput;
+          newInput = new OMInputStream(v, this._input);
+          this._input[getTag(v)] = newInput;
         }
       } else
-        newInput = new OMInputStream(v, this.input);
-      this.input = newInput;
+        newInput = new OMInputStream(v, this._input);
+      this._input = newInput;
     };
     this._applyWithArgs = function(rule) {
       var ruleFnArity = this[rule].length;
@@ -422,30 +422,30 @@ let OMeta = {
     throw fail;
   },
   _not: function(x) {
-    var origInput = this.input,
+    var origInput = this._input,
         r = this._startStructure(-1);
     try {
       this._appendStructure(r, x.call(this));
     } catch (f) {
       if (f != fail)
         throw f;
-      this.input = origInput;
+      this._input = origInput;
       r.value = true;
       return this._endStructure(r);
     }
     throw fail;
   },
   _lookahead: function(x) {
-    var origInput = this.input,
+    var origInput = this._input,
         r = x.call(this);
-    this.input = origInput;
+    this._input = origInput;
     return r;
   },
   _or: function() {
-    var origInput = this.input;
+    var origInput = this._input;
     for (var idx = 0; idx < arguments.length; idx++) {
       try {
-        this.input = origInput;
+        this._input = origInput;
         return arguments[idx].call(this);
       } catch (f) {
         if (f != fail)
@@ -455,14 +455,14 @@ let OMeta = {
     throw fail;
   },
   _xor: function(ruleName) {
-    var idx = 1, newInput, origInput = this.input, r;
+    var idx = 1, newInput, origInput = this._input, r;
     while (idx < arguments.length) {
       try {
-        this.input = origInput;
+        this._input = origInput;
         r = arguments[idx].call(this);
         if (newInput)
           throw new Error('more than one choice matched by "exclusive-OR" in ' + ruleName);
-        newInput = this.input;
+        newInput = this._input;
       } catch (f) {
         if (f != fail)
           throw f;
@@ -470,7 +470,7 @@ let OMeta = {
       idx++;
     }
     if (newInput) {
-      this.input = newInput;
+      this._input = newInput;
       return r;
     }
     throw fail;
@@ -479,14 +479,14 @@ let OMeta = {
     this._xor = this._or;
   },
   _opt: function(x) {
-    var origInput = this.input,
+    var origInput = this._input,
         r = this._startStructure(-1);
     try {
       r = x.call(this);
     } catch (f) {
       if (f != fail)
         throw f;
-      this.input = origInput;
+      this._input = origInput;
     }
     return this._endStructure(r);
   },
@@ -494,14 +494,14 @@ let OMeta = {
     var r = this._startStructure(-1), ans = [];
     if (arguments.length > 1) { this._appendStructure(r, x.call(this)); ans.push(r.value); }
     while (true) {
-      var origInput = this.input;
+      var origInput = this._input;
       try {
         this._appendStructure(r, x.call(this));
         ans.push(r.value);
       } catch (f) {
         if (f != fail)
           throw f;
-        this.input = origInput;
+        this._input = origInput;
         break;
       }
     }
@@ -516,31 +516,31 @@ let OMeta = {
     var v = r.value;
     if (!isSequenceable(v))
       throw fail;
-    var origInput = this.input;
-    this.input = v.toOMInputStream();
+    var origInput = this._input;
+    this._input = v.toOMInputStream();
     // TODO: probably append as a child
     this._appendStructure(r, x.call(this));
     this._appendStructure(r, this._apply("end"));
     r.value = v;
-    this.input = origInput;
+    this._input = origInput;
     return this._endStructure(r);
   },
   _consumedBy: function(x) {
-    var origInput = this.input,
+    var origInput = this._input,
         r = this._startStructure(-1);
     this._appendStructure(r, x.call(this));
-    r.value = origInput.upTo(this.input);
+    r.value = origInput.upTo(this._input);
     return this._endStructure(r);
   },
   _idxConsumedBy: function(x) {
-    var origInput = this.input,
+    var origInput = this._input,
         r = this._startStructure(-1);
     this._appendStructure(r, x.call(this));
-    r.value = {fromIdx: origInput.idx, toIdx: this.input.idx};
+    r.value = {fromIdx: origInput.idx, toIdx: this._input.idx};
     return this._endStructure(r);
   },
   _interleave: function(mode1, part1, mode2, part2 /* ..., moden, partn */) {
-    var currInput = this.input, ans = [], r = this._startStructure(-1);
+    var currInput = this._input, ans = [], r = this._startStructure(-1);
     for (var idx = 0; idx < arguments.length; idx += 2)
       ans[idx / 2] = (arguments[idx] == "*" || arguments[idx] == "+") ? [] : undefined;
     while (true) {
@@ -548,7 +548,7 @@ let OMeta = {
       while (idx < arguments.length) {
         if (arguments[idx] != "0")
           try {
-            this.input = currInput;
+            this._input = currInput;
             switch (arguments[idx]) {
             case "*":
               ans[idx / 2].push(this._appendStructure(r, arguments[idx + 1].call(this)));
@@ -568,7 +568,7 @@ let OMeta = {
             default:
               throw new Error("invalid mode '" + arguments[idx] + "' in OMeta._interleave");
             }
-            currInput = this.input;
+            currInput = this._input;
             break;
           } catch (f) {
             if (f != fail)
@@ -591,15 +591,15 @@ let OMeta = {
   // some basic rules
   anything: function() {
     var r = this._startStructure(-1);
-    r.value = this.input.head();
-    this.input = this.input.tail();
+    r.value = this._input.head();
+    this._input = this._input.tail();
     return this._endStructure(r);
   },
   end: function() {
     return this._not(function() { return this._apply("anything"); });
   },
   pos: function() {
-    return this.input.idx;
+    return this._input.idx;
   },
   empty: function() {
     var r = this._startStructure(-1);
@@ -610,10 +610,10 @@ let OMeta = {
     return this._apply(r);
   },
   foreign: function(g, r) {
-    var gi = objectThatDelegatesTo(g, {input: makeOMInputStreamProxy(this.input)});
+    var gi = objectThatDelegatesTo(g, {_input: makeOMInputStreamProxy(this._input)});
     gi.initialize();
     var ans = gi._apply(r);
-    this.input = gi.input.target;
+    this._input = gi._input.target;
     return ans;
   },
 
@@ -641,7 +641,7 @@ let OMeta = {
     var realArgs = [rule];
     for (var idx = 0; idx < args.length; idx++)
       realArgs.push(args[idx]);
-    var m = objectThatDelegatesTo(this, {input: input});
+    var m = objectThatDelegatesTo(this, {_input: input});
     m.initialize();
     try {
       let ret = realArgs.length == 1 ? m._apply.call(m, realArgs[0]) : m._applyWithArgs.apply(m, realArgs);
@@ -652,7 +652,7 @@ let OMeta = {
       if (f != fail)
         throw f;
 
-      var einput = m.input;
+      var einput = m._input;
       if (einput.idx != undefined) {
         while (einput.tl != undefined && einput.tl.idx != undefined)
           einput = einput.tl;
@@ -684,7 +684,7 @@ let OMeta = {
     var m = objectThatDelegatesTo(this, {});
     m.initialize();
     m.matchAll = function(listyObj, aRule) {
-      this.input = listyObj.toOMInputStream();
+      this._input = listyObj.toOMInputStream();
       return this._apply(aRule);
     };
     return m;
