@@ -291,9 +291,9 @@ resetSourceMap();
 // the OMeta "class" and basic functionality
 
 let OMeta = {
-  _extractLocation: function(retVal) {
-    return { start: retVal.start,
-             stop: (retVal.stop !== null ? retVal.stop : this.input.idx), };
+  _extractLocation: function(val) {
+    return { start: val.start,
+             stop: (val.stop !== null ? val.stop : this.input.idx), };
   },
   _startStructure: function(id, rule) {
     return {
